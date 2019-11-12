@@ -26,10 +26,10 @@ import (
 )
 
 func init() {
-	Factories = append(Factories, DeviceLogListenerFactory)
+	Factories = append(Factories, IncidentListenerFactory)
 }
 
-func DeviceLogListenerFactory(config util.Config, control interfaces.Controller) (topic string, listener Listener, err error) {
+func IncidentListenerFactory(config util.Config, control interfaces.Controller) (topic string, listener Listener, err error) {
 	return config.KafkaIncidentTopic, func(msg []byte) (err error) {
 		defer func() {
 			if err != nil {
