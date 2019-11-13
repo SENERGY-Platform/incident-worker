@@ -20,17 +20,17 @@ import (
 	"context"
 	"github.com/SENERGY-Platform/incident-worker/lib"
 	"github.com/SENERGY-Platform/incident-worker/lib/camunda"
+	"github.com/SENERGY-Platform/incident-worker/lib/configuration"
 	"github.com/SENERGY-Platform/incident-worker/lib/database"
 	"github.com/SENERGY-Platform/incident-worker/lib/messages"
 	"github.com/SENERGY-Platform/incident-worker/lib/source"
-	"github.com/SENERGY-Platform/incident-worker/lib/util"
 	"github.com/SENERGY-Platform/incident-worker/tests/server"
 	"testing"
 	"time"
 )
 
 func TestInit(t *testing.T) {
-	defaultConfig, err := util.LoadConfig("../config.json")
+	defaultConfig, err := configuration.LoadConfig("../config.json")
 	if err != nil {
 		t.Error(err)
 		return
@@ -57,7 +57,7 @@ func TestInit(t *testing.T) {
 }
 
 func TestDatabase(t *testing.T) {
-	defaultConfig, err := util.LoadConfig("../config.json")
+	defaultConfig, err := configuration.LoadConfig("../config.json")
 	if err != nil {
 		t.Error(err)
 		return
@@ -105,7 +105,7 @@ func TestDatabase(t *testing.T) {
 }
 
 func TestCamunda(t *testing.T) {
-	defaultConfig, err := util.LoadConfig("../config.json")
+	defaultConfig, err := configuration.LoadConfig("../config.json")
 	if err != nil {
 		t.Error(err)
 		return

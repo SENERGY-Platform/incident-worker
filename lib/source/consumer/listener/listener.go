@@ -17,10 +17,10 @@
 package listener
 
 import (
+	"github.com/SENERGY-Platform/incident-worker/lib/configuration"
 	"github.com/SENERGY-Platform/incident-worker/lib/interfaces"
-	"github.com/SENERGY-Platform/incident-worker/lib/util"
 )
 
 type Listener func(msg []byte) (err error)
 
-var Factories = []func(config util.Config, control interfaces.Controller) (topic string, listener Listener, err error){}
+var Factories = []func(config configuration.Config, control interfaces.Controller) (topic string, listener Listener, err error){}

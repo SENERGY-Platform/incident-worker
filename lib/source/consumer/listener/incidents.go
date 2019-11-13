@@ -18,9 +18,9 @@ package listener
 
 import (
 	"encoding/json"
+	"github.com/SENERGY-Platform/incident-worker/lib/configuration"
 	"github.com/SENERGY-Platform/incident-worker/lib/interfaces"
 	"github.com/SENERGY-Platform/incident-worker/lib/messages"
-	"github.com/SENERGY-Platform/incident-worker/lib/util"
 	"github.com/pkg/errors"
 	"log"
 )
@@ -29,7 +29,7 @@ func init() {
 	Factories = append(Factories, IncidentListenerFactory)
 }
 
-func IncidentListenerFactory(config util.Config, control interfaces.Controller) (topic string, listener Listener, err error) {
+func IncidentListenerFactory(config configuration.Config, control interfaces.Controller) (topic string, listener Listener, err error) {
 	return config.KafkaIncidentTopic, func(msg []byte) (err error) {
 		defer func() {
 			if err != nil {

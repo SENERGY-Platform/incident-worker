@@ -18,8 +18,8 @@ package interfaces
 
 import (
 	"context"
+	"github.com/SENERGY-Platform/incident-worker/lib/configuration"
 	"github.com/SENERGY-Platform/incident-worker/lib/messages"
-	"github.com/SENERGY-Platform/incident-worker/lib/util"
 )
 
 type Controller interface {
@@ -31,7 +31,7 @@ type Camunda interface {
 }
 
 type CamundaFactory interface {
-	Get(ctx context.Context, config util.Config) (Camunda, error)
+	Get(ctx context.Context, config configuration.Config) (Camunda, error)
 }
 
 type Database interface {
@@ -39,9 +39,9 @@ type Database interface {
 }
 
 type DatabaseFactory interface {
-	Get(ctx context.Context, config util.Config) (Database, error)
+	Get(ctx context.Context, config configuration.Config) (Database, error)
 }
 
 type SourceFactory interface {
-	Start(ctx context.Context, config util.Config, control Controller, runtimeErrorHandler func(err error)) (err error)
+	Start(ctx context.Context, config configuration.Config, control Controller, runtimeErrorHandler func(err error)) (err error)
 }

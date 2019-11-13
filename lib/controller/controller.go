@@ -18,18 +18,18 @@ package controller
 
 import (
 	"context"
+	"github.com/SENERGY-Platform/incident-worker/lib/configuration"
 	"github.com/SENERGY-Platform/incident-worker/lib/interfaces"
 	"github.com/SENERGY-Platform/incident-worker/lib/messages"
-	"github.com/SENERGY-Platform/incident-worker/lib/util"
 )
 
 type Controller struct {
-	config  util.Config
+	config  configuration.Config
 	camunda interfaces.Camunda
 	db      interfaces.Database
 }
 
-func New(ctx context.Context, config util.Config, camunda interfaces.Camunda, db interfaces.Database) *Controller {
+func New(ctx context.Context, config configuration.Config, camunda interfaces.Camunda, db interfaces.Database) *Controller {
 	return &Controller{config: config, camunda: camunda, db: db}
 }
 

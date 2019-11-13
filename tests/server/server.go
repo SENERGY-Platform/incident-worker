@@ -18,7 +18,7 @@ package server
 
 import (
 	"context"
-	"github.com/SENERGY-Platform/incident-worker/lib/util"
+	"github.com/SENERGY-Platform/incident-worker/lib/configuration"
 	"github.com/ory/dockertest"
 	"github.com/ory/dockertest/docker"
 	"log"
@@ -28,7 +28,7 @@ import (
 	"strconv"
 )
 
-func New(parentCtx context.Context, init util.Config) (config util.Config, err error) {
+func New(parentCtx context.Context, init configuration.Config) (config configuration.Config, err error) {
 	config = init
 
 	ctx, cancel := context.WithCancel(parentCtx)

@@ -18,8 +18,8 @@ package camunda
 
 import (
 	"context"
+	"github.com/SENERGY-Platform/incident-worker/lib/configuration"
 	"github.com/SENERGY-Platform/incident-worker/lib/interfaces"
-	"github.com/SENERGY-Platform/incident-worker/lib/util"
 	"github.com/pkg/errors"
 	"io/ioutil"
 	"net/http"
@@ -32,10 +32,10 @@ type FactoryType struct{}
 var Factory = &FactoryType{}
 
 type Camunda struct {
-	config util.Config
+	config configuration.Config
 }
 
-func (this *FactoryType) Get(ctx context.Context, config util.Config) (interfaces.Camunda, error) {
+func (this *FactoryType) Get(ctx context.Context, config configuration.Config) (interfaces.Camunda, error) {
 	return &Camunda{config: config}, nil
 }
 

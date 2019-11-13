@@ -19,9 +19,9 @@ package tests
 import (
 	"context"
 	"encoding/json"
+	"github.com/SENERGY-Platform/incident-worker/lib/configuration"
 	"github.com/SENERGY-Platform/incident-worker/lib/messages"
-	kutil "github.com/SENERGY-Platform/incident-worker/lib/source/util"
-	"github.com/SENERGY-Platform/incident-worker/lib/util"
+	"github.com/SENERGY-Platform/incident-worker/lib/source/util"
 	"github.com/pkg/errors"
 	"github.com/segmentio/kafka-go"
 	"log"
@@ -30,8 +30,8 @@ import (
 	"time"
 )
 
-func sendIncidentToKafka(t *testing.T, config util.Config, cmd messages.KafkaIncidentMessage) {
-	broker, err := kutil.GetBroker(config.ZookeeperUrl)
+func sendIncidentToKafka(t *testing.T, config configuration.Config, cmd messages.KafkaIncidentMessage) {
+	broker, err := util.GetBroker(config.ZookeeperUrl)
 	if err != nil {
 		err = errors.WithStack(err)
 		t.Fatalf("ERROR: %+v", err)

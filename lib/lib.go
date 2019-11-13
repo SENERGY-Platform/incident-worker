@@ -19,21 +19,21 @@ package lib
 import (
 	"context"
 	"github.com/SENERGY-Platform/incident-worker/lib/camunda"
+	"github.com/SENERGY-Platform/incident-worker/lib/configuration"
 	"github.com/SENERGY-Platform/incident-worker/lib/controller"
 	"github.com/SENERGY-Platform/incident-worker/lib/database"
 	"github.com/SENERGY-Platform/incident-worker/lib/interfaces"
 	"github.com/SENERGY-Platform/incident-worker/lib/source"
-	"github.com/SENERGY-Platform/incident-worker/lib/util"
 	"log"
 )
 
-func Start(ctx context.Context, config util.Config) (err error) {
+func Start(ctx context.Context, config configuration.Config) (err error) {
 	return StartWith(ctx, config, source.Factory, camunda.Factory, database.Factory, func(err error) {
 		log.Fatalf("FATAL: %+v", err)
 	})
 }
 
-func StartWith(parentCtx context.Context, config util.Config, source interfaces.SourceFactory, camunda interfaces.CamundaFactory, database interfaces.DatabaseFactory, errorHandler func(err error)) (err error) {
+func StartWith(parentCtx context.Context, config configuration.Config, source interfaces.SourceFactory, camunda interfaces.CamundaFactory, database interfaces.DatabaseFactory, errorHandler func(err error)) (err error) {
 	ctx, cancel := context.WithCancel(parentCtx)
 	camundaInstance, err := camunda.Get(ctx, config)
 	if err != nil {

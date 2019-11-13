@@ -18,15 +18,15 @@ package source
 
 import (
 	"context"
+	"github.com/SENERGY-Platform/incident-worker/lib/configuration"
 	"github.com/SENERGY-Platform/incident-worker/lib/interfaces"
 	"github.com/SENERGY-Platform/incident-worker/lib/source/consumer"
-	"github.com/SENERGY-Platform/incident-worker/lib/util"
 )
 
 type FactoryType struct{}
 
 var Factory = &FactoryType{}
 
-func (this *FactoryType) Start(ctx context.Context, config util.Config, control interfaces.Controller, runtimeErrorHandler func(err error)) (err error) {
+func (this *FactoryType) Start(ctx context.Context, config configuration.Config, control interfaces.Controller, runtimeErrorHandler func(err error)) (err error) {
 	return consumer.Start(ctx, config, control, runtimeErrorHandler)
 }

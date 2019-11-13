@@ -18,15 +18,15 @@ package database
 
 import (
 	"context"
+	"github.com/SENERGY-Platform/incident-worker/lib/configuration"
 	"github.com/SENERGY-Platform/incident-worker/lib/database/mongo"
 	"github.com/SENERGY-Platform/incident-worker/lib/interfaces"
-	"github.com/SENERGY-Platform/incident-worker/lib/util"
 )
 
 type FactoryType struct{}
 
 var Factory = &FactoryType{}
 
-func (this *FactoryType) Get(ctx context.Context, config util.Config) (interfaces.Database, error) {
+func (this *FactoryType) Get(ctx context.Context, config configuration.Config) (interfaces.Database, error) {
 	return mongo.New(ctx, config)
 }

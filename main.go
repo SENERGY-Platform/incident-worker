@@ -20,7 +20,7 @@ import (
 	"context"
 	"flag"
 	"github.com/SENERGY-Platform/incident-worker/lib"
-	"github.com/SENERGY-Platform/incident-worker/lib/util"
+	"github.com/SENERGY-Platform/incident-worker/lib/configuration"
 	"log"
 	"os"
 	"os/signal"
@@ -32,7 +32,7 @@ func main() {
 	configLocation := flag.String("config", "config.json", "configuration file")
 	flag.Parse()
 
-	config, err := util.LoadConfig(*configLocation)
+	config, err := configuration.LoadConfig(*configLocation)
 	if err != nil {
 		log.Fatalf("FATAL: %+v", err)
 	}

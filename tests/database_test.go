@@ -18,8 +18,8 @@ package tests
 
 import (
 	"context"
+	"github.com/SENERGY-Platform/incident-worker/lib/configuration"
 	"github.com/SENERGY-Platform/incident-worker/lib/messages"
-	"github.com/SENERGY-Platform/incident-worker/lib/util"
 	"github.com/pkg/errors"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
@@ -29,7 +29,7 @@ import (
 	"time"
 )
 
-func checkIncidentInDatabase(t *testing.T, config util.Config, message messages.KafkaIncidentMessage) {
+func checkIncidentInDatabase(t *testing.T, config configuration.Config, message messages.KafkaIncidentMessage) {
 	ctx, _ := context.WithTimeout(context.Background(), 2*time.Second)
 	client, err := mongo.Connect(ctx, options.Client().ApplyURI(config.MongoUrl))
 	if err != nil {

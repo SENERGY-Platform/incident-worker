@@ -18,8 +18,8 @@ package mongo
 
 import (
 	"context"
+	"github.com/SENERGY-Platform/incident-worker/lib/configuration"
 	"github.com/SENERGY-Platform/incident-worker/lib/messages"
-	"github.com/SENERGY-Platform/incident-worker/lib/util"
 	"github.com/pkg/errors"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
@@ -31,11 +31,11 @@ import (
 const TIMEOUT = 2 * time.Second
 
 type Mongo struct {
-	config util.Config
+	config configuration.Config
 	client *mongo.Client
 }
 
-func New(ctx context.Context, config util.Config) (result *Mongo, err error) {
+func New(ctx context.Context, config configuration.Config) (result *Mongo, err error) {
 	result = &Mongo{config: config}
 	result.client, err = mongo.Connect(ctx, options.Client().ApplyURI(config.MongoUrl))
 	if err != nil {

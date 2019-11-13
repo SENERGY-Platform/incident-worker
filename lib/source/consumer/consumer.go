@@ -18,13 +18,13 @@ package consumer
 
 import (
 	"context"
+	"github.com/SENERGY-Platform/incident-worker/lib/configuration"
 	"github.com/SENERGY-Platform/incident-worker/lib/interfaces"
 	"github.com/SENERGY-Platform/incident-worker/lib/source/consumer/listener"
-	"github.com/SENERGY-Platform/incident-worker/lib/util"
 	"log"
 )
 
-func Start(ctx context.Context, config util.Config, control interfaces.Controller, runtimeErrorHandler func(err error)) (err error) {
+func Start(ctx context.Context, config configuration.Config, control interfaces.Controller, runtimeErrorHandler func(err error)) (err error) {
 	for _, factory := range listener.Factories {
 		topic, handler, err := factory(config, control)
 		if err != nil {
