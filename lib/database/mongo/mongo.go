@@ -25,6 +25,7 @@ import (
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
 	"go.mongodb.org/mongo-driver/mongo/readpref"
+	"log"
 	"time"
 )
 
@@ -37,18 +38,26 @@ type Mongo struct {
 
 func New(ctx context.Context, config configuration.Config) (result *Mongo, err error) {
 	result = &Mongo{config: config}
+	ctx, cancel := context.WithCancel(ctx)
 	result.client, err = mongo.Connect(ctx, options.Client().ApplyURI(config.MongoUrl))
 	if err != nil {
 		err = errors.WithStack(err)
-		return
+		return nil, err
 	}
-	ctx, _ = context.WithTimeout(context.Background(), TIMEOUT)
-	err = result.client.Ping(ctx, readpref.Primary())
+	go func() {
+		<-ctx.Done()
+		log.Println("disconnect mongodb")
+		disconnectCtx, _ := context.WithTimeout(context.Background(), TIMEOUT)
+		result.client.Disconnect(disconnectCtx)
+	}()
+	pingCtx, _ := context.WithTimeout(context.Background(), TIMEOUT)
+	err = result.client.Ping(pingCtx, readpref.Primary())
 	if err != nil {
+		cancel()
 		err = errors.WithStack(err)
-		return
+		return nil, err
 	}
-	return
+	return result, nil
 }
 
 func (this *Mongo) Save(incident messages.KafkaIncidentMessage) error {
