@@ -18,9 +18,9 @@ package listener
 
 import (
 	"encoding/json"
-	"github.com/SENERGY-Platform/incident-worker/lib/configuration"
-	"github.com/SENERGY-Platform/incident-worker/lib/interfaces"
-	"github.com/SENERGY-Platform/incident-worker/lib/messages"
+	"github.com/SENERGY-Platform/process-incident-worker/lib/configuration"
+	"github.com/SENERGY-Platform/process-incident-worker/lib/interfaces"
+	"github.com/SENERGY-Platform/process-incident-worker/lib/messages"
 	"github.com/pkg/errors"
 	"log"
 )

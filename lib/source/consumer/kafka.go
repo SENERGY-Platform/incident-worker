@@ -18,7 +18,7 @@ package consumer
 
 import (
 	"context"
-	"github.com/SENERGY-Platform/incident-worker/lib/source/util"
+	"github.com/SENERGY-Platform/process-incident-worker/lib/source/util"
 	"github.com/segmentio/kafka-go"
 	"io"
 	"io/ioutil"

@@ -18,9 +18,9 @@ package source
 
 import (
 	"context"
-	"github.com/SENERGY-Platform/incident-worker/lib/configuration"
-	"github.com/SENERGY-Platform/incident-worker/lib/interfaces"
-	"github.com/SENERGY-Platform/incident-worker/lib/source/consumer"
+	"github.com/SENERGY-Platform/process-incident-worker/lib/configuration"
+	"github.com/SENERGY-Platform/process-incident-worker/lib/interfaces"
+	"github.com/SENERGY-Platform/process-incident-worker/lib/source/consumer"
 )
 
 type FactoryType struct{}

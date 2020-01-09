@@ -17,8 +17,8 @@
 package listener
 
 import (
-	"github.com/SENERGY-Platform/incident-worker/lib/configuration"
-	"github.com/SENERGY-Platform/incident-worker/lib/interfaces"
+	"github.com/SENERGY-Platform/process-incident-worker/lib/configuration"
+	"github.com/SENERGY-Platform/process-incident-worker/lib/interfaces"
 )
 
 type Listener func(msg []byte) (err error)

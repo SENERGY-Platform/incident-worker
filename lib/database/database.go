@@ -18,9 +18,9 @@ package database
 
 import (
 	"context"
-	"github.com/SENERGY-Platform/incident-worker/lib/configuration"
-	"github.com/SENERGY-Platform/incident-worker/lib/database/mongo"
-	"github.com/SENERGY-Platform/incident-worker/lib/interfaces"
+	"github.com/SENERGY-Platform/process-incident-worker/lib/configuration"
+	"github.com/SENERGY-Platform/process-incident-worker/lib/database/mongo"
+	"github.com/SENERGY-Platform/process-incident-worker/lib/interfaces"
 )
 
 type FactoryType struct{}

@@ -19,8 +19,8 @@ package main
 import (
 	"context"
 	"flag"
-	"github.com/SENERGY-Platform/incident-worker/lib"
-	"github.com/SENERGY-Platform/incident-worker/lib/configuration"
+	"github.com/SENERGY-Platform/process-incident-worker/lib"
+	"github.com/SENERGY-Platform/process-incident-worker/lib/configuration"
 	"log"
 	"os"
 	"os/signal"

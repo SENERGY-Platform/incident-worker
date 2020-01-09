@@ -20,7 +20,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"errors"
-	"github.com/SENERGY-Platform/incident-worker/lib/configuration"
+	"github.com/SENERGY-Platform/process-incident-worker/lib/configuration"
 	"io/ioutil"
 	"log"
 	"net/http"

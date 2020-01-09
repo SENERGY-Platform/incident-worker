@@ -18,12 +18,12 @@ package lib
 
 import (
 	"context"
-	"github.com/SENERGY-Platform/incident-worker/lib/camunda"
-	"github.com/SENERGY-Platform/incident-worker/lib/configuration"
-	"github.com/SENERGY-Platform/incident-worker/lib/controller"
-	"github.com/SENERGY-Platform/incident-worker/lib/database"
-	"github.com/SENERGY-Platform/incident-worker/lib/interfaces"
-	"github.com/SENERGY-Platform/incident-worker/lib/source"
+	"github.com/SENERGY-Platform/process-incident-worker/lib/camunda"
+	"github.com/SENERGY-Platform/process-incident-worker/lib/configuration"
+	"github.com/SENERGY-Platform/process-incident-worker/lib/controller"
+	"github.com/SENERGY-Platform/process-incident-worker/lib/database"
+	"github.com/SENERGY-Platform/process-incident-worker/lib/interfaces"
+	"github.com/SENERGY-Platform/process-incident-worker/lib/source"
 	"log"
 )
 

@@ -19,9 +19,9 @@ package tests
 import (
 	"context"
 	"encoding/json"
-	"github.com/SENERGY-Platform/incident-worker/lib/configuration"
-	"github.com/SENERGY-Platform/incident-worker/lib/messages"
-	"github.com/SENERGY-Platform/incident-worker/lib/source/util"
+	"github.com/SENERGY-Platform/process-incident-worker/lib/configuration"
+	"github.com/SENERGY-Platform/process-incident-worker/lib/messages"
+	"github.com/SENERGY-Platform/process-incident-worker/lib/source/util"
 	"github.com/pkg/errors"
 	"github.com/segmentio/kafka-go"
 	"log"

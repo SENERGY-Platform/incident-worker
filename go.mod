@@ -1,4 +1,4 @@
-module github.com/SENERGY-Platform/incident-worker
+module github.com/SENERGY-Platform/process-incident-worker
 
 go 1.13
 
