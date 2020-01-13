@@ -34,7 +34,7 @@ func New(ctx context.Context, config configuration.Config, camunda interfaces.Ca
 }
 
 func (this *Controller) HandleIncident(incident messages.KafkaIncidentMessage) error {
-	if incident.MsgVersion != 1 {
+	if incident.MsgVersion != 1 && incident.MsgVersion != 2 {
 		return nil
 	}
 	err := this.camunda.StopProcessInstance(incident.ProcessInstanceId)
