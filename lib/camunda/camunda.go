@@ -18,12 +18,15 @@ package camunda
 
 import (
 	"context"
+	"encoding/json"
 	"github.com/SENERGY-Platform/process-incident-worker/lib/configuration"
 	"github.com/SENERGY-Platform/process-incident-worker/lib/interfaces"
 	"github.com/pkg/errors"
 	"io/ioutil"
+	"log"
 	"net/http"
 	"net/url"
+	"runtime/debug"
 	"time"
 )
 
@@ -59,4 +62,30 @@ func (this *Camunda) StopProcessInstance(id string) (err error) {
 	msg, _ := ioutil.ReadAll(resp.Body)
 	err = errors.New("error on delete in engine for " + this.config.CamundaUrl + "/engine-rest/process-instance/" + url.PathEscape(id) + ": " + resp.Status + " " + string(msg))
 	return err
+}
+
+type NameWrapper struct {
+	Name string `json:"name"`
+}
+
+func (this *Camunda) GetProcessName(id string) (name string, err error) {
+	client := &http.Client{Timeout: 5 * time.Second}
+	request, err := http.NewRequest("GET", this.config.CamundaUrl+"/engine-rest/process-definition/"+url.PathEscape(id), nil)
+	if err != nil {
+		return "", errors.WithStack(err)
+	}
+	resp, err := client.Do(request)
+	if err != nil {
+		return "", errors.WithStack(err)
+	}
+	defer resp.Body.Close()
+	if resp.StatusCode != 200 {
+		temp, _ := ioutil.ReadAll(resp.Body)
+		log.Println("ERROR:", resp.Status, string(temp))
+		debug.PrintStack()
+		return "", errors.New("unexpected response")
+	}
+	result := NameWrapper{}
+	err = json.NewDecoder(resp.Body).Decode(&result)
+	return result.Name, errors.WithStack(err)
 }

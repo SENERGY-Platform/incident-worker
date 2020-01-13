@@ -28,6 +28,7 @@ type Controller interface {
 
 type Camunda interface {
 	StopProcessInstance(id string) (err error)
+	GetProcessName(id string) (string, error)
 }
 
 type CamundaFactory interface {

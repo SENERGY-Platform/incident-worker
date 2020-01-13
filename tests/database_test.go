@@ -29,7 +29,7 @@ import (
 	"time"
 )
 
-func checkIncidentInDatabase(t *testing.T, config configuration.Config, message messages.KafkaIncidentMessage) {
+func checkIncidentInDatabase(t *testing.T, config configuration.Config, expected messages.KafkaIncidentMessage) {
 	ctx, _ := context.WithTimeout(context.Background(), 2*time.Second)
 	client, err := mongo.Connect(ctx, options.Client().ApplyURI(config.MongoUrl))
 	if err != nil {
@@ -37,7 +37,7 @@ func checkIncidentInDatabase(t *testing.T, config configuration.Config, message 
 		t.Fatalf("ERROR: %+v", err)
 		return
 	}
-	result := client.Database(config.MongoDatabaseName).Collection(config.MongoIncidentCollectionName).FindOne(ctx, bson.M{"id": message.Id})
+	result := client.Database(config.MongoDatabaseName).Collection(config.MongoIncidentCollectionName).FindOne(ctx, bson.M{"id": expected.Id})
 	err = result.Err()
 	if err != nil {
 		err = errors.WithStack(err)
@@ -52,12 +52,12 @@ func checkIncidentInDatabase(t *testing.T, config configuration.Config, message 
 		return
 	}
 
-	if message.Time.Unix() != compare.Time.Unix() {
-		t.Fatal(message.Time.Unix(), compare.Time.Unix())
+	if expected.Time.Unix() != compare.Time.Unix() {
+		t.Fatal(expected.Time.Unix(), compare.Time.Unix())
 	}
-	message.Time = time.Time{}
+	expected.Time = time.Time{}
 	compare.Time = time.Time{}
-	if !reflect.DeepEqual(message, compare) {
-		t.Fatal(message, compare)
+	if !reflect.DeepEqual(expected, compare) {
+		t.Fatal(expected, compare)
 	}
 }

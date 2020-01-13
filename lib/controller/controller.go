@@ -21,6 +21,7 @@ import (
 	"github.com/SENERGY-Platform/process-incident-worker/lib/configuration"
 	"github.com/SENERGY-Platform/process-incident-worker/lib/interfaces"
 	"github.com/SENERGY-Platform/process-incident-worker/lib/messages"
+	"log"
 )
 
 type Controller struct {
@@ -40,6 +41,13 @@ func (this *Controller) HandleIncident(incident messages.KafkaIncidentMessage) e
 	err := this.camunda.StopProcessInstance(incident.ProcessInstanceId)
 	if err != nil {
 		return err
+	}
+	name, err := this.camunda.GetProcessName(incident.ProcessDefinitionId)
+	if err != nil {
+		log.Println("WARNING: unable to get process name", err)
+		incident.DeploymentName = incident.ProcessDefinitionId
+	} else {
+		incident.DeploymentName = name
 	}
 	return this.db.Save(incident)
 }

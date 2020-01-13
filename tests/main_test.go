@@ -163,6 +163,7 @@ func TestCamunda(t *testing.T) {
 
 	time.Sleep(10 * time.Second)
 
+	incident.DeploymentName = "test"
 	t.Run("check database", func(t *testing.T) {
 		checkIncidentInDatabase(t, config, incident)
 	})
