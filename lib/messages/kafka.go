@@ -30,3 +30,13 @@ type KafkaIncidentMessage struct {
 	TenantId            string    `json:"tenant_id" bson:"tenant_id"`
 	DeploymentName      string    `json:"deployment_name" bson:"deployment_name"`
 }
+
+type ProcessInstanceHistoryEvent struct {
+	Command string `json:"command"`
+	Id      string `json:"id"`
+}
+
+type ProcessDefinitionEvent struct {
+	Command string `json:"command"`
+	Id      string `json:"id"`
+}

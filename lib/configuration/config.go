@@ -28,14 +28,16 @@ import (
 )
 
 type Config struct {
-	CamundaUrl                  string `json:"camunda_url"`
-	ZookeeperUrl                string `json:"zookeeper_url"`
-	KafkaConsumerGroup          string `json:"kafka_consumer_group"`
-	KafkaIncidentTopic          string `json:"kafka_incident_topic"`
-	Debug                       bool   `json:"debug"`
-	MongoUrl                    string `json:"mongo_url"`
-	MongoDatabaseName           string `json:"mongo_database_name"`
-	MongoIncidentCollectionName string `json:"mongo_incident_collection_name"`
+	CamundaUrl                            string `json:"camunda_url"`
+	ZookeeperUrl                          string `json:"zookeeper_url"`
+	KafkaConsumerGroup                    string `json:"kafka_consumer_group"`
+	KafkaIncidentTopic                    string `json:"kafka_incident_topic"`
+	KafkaProcessDefinitionEventTopic      string `json:"kafka_process_definition_event_topic"`
+	KafkaProcessInstanceHistoryEventTopic string `json:"kafka_process_instance_history_event_topic"`
+	Debug                                 bool   `json:"debug"`
+	MongoUrl                              string `json:"mongo_url"`
+	MongoDatabaseName                     string `json:"mongo_database_name"`
+	MongoIncidentCollectionName           string `json:"mongo_incident_collection_name"`
 }
 
 //loads config from json in location and used environment variables (e.g ZookeeperUrl --> ZOOKEEPER_URL)

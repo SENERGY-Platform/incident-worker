@@ -66,6 +66,18 @@ func (this *Mongo) Save(incident messages.KafkaIncidentMessage) error {
 	return errors.WithStack(err)
 }
 
+func (this *Mongo) DeleteByInstanceId(id string) error {
+	ctx, _ := context.WithTimeout(context.Background(), TIMEOUT)
+	_, err := this.collection().DeleteMany(ctx, bson.M{"process_instance_id": id})
+	return errors.WithStack(err)
+}
+
+func (this *Mongo) DeleteByDefinitionId(id string) error {
+	ctx, _ := context.WithTimeout(context.Background(), TIMEOUT)
+	_, err := this.collection().DeleteMany(ctx, bson.M{"process_definition_id": id})
+	return errors.WithStack(err)
+}
+
 func (this *Mongo) collection() *mongo.Collection {
 	return this.client.Database(this.config.MongoDatabaseName).Collection(this.config.MongoIncidentCollectionName)
 }

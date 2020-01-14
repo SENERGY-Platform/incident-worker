@@ -51,3 +51,11 @@ func (this *Controller) HandleIncident(incident messages.KafkaIncidentMessage) e
 	}
 	return this.db.Save(incident)
 }
+
+func (this *Controller) HandleProcessInstanceHistoryEvent(message messages.ProcessInstanceHistoryEvent) error {
+	return this.db.DeleteByInstanceId(message.Id)
+}
+
+func (this *Controller) HandleProcessDefinitionEvent(message messages.ProcessDefinitionEvent) error {
+	return this.db.DeleteByDefinitionId(message.Id)
+}

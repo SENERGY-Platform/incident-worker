@@ -24,6 +24,7 @@ import (
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
+	"go.mongodb.org/mongo-driver/x/bsonx"
 	"reflect"
 	"testing"
 	"time"
@@ -59,5 +60,47 @@ func checkIncidentInDatabase(t *testing.T, config configuration.Config, expected
 	compare.Time = time.Time{}
 	if !reflect.DeepEqual(expected, compare) {
 		t.Fatal(expected, compare)
+	}
+}
+
+func checkIncidentsInDatabase(t *testing.T, config configuration.Config, expected ...messages.KafkaIncidentMessage) {
+	ctx, _ := context.WithTimeout(context.Background(), 2*time.Second)
+	client, err := mongo.Connect(ctx, options.Client().ApplyURI(config.MongoUrl))
+	if err != nil {
+		err = errors.WithStack(err)
+		t.Fatalf("ERROR: %+v", err)
+		return
+	}
+	option := options.Find().
+		SetSort(bsonx.Doc{
+			{"id", bsonx.Int32(1)},
+		})
+
+	incidents := []messages.KafkaIncidentMessage{}
+	cursor, err := client.Database(config.MongoDatabaseName).Collection(config.MongoIncidentCollectionName).Find(ctx, bson.M{}, option)
+	if err != nil {
+		err = errors.WithStack(err)
+		t.Fatalf("ERROR: %+v", err)
+		return
+	}
+	for cursor.Next(context.Background()) {
+		incident := messages.KafkaIncidentMessage{}
+		err = cursor.Decode(&incident)
+		if err != nil {
+			err = errors.WithStack(err)
+			t.Fatalf("ERROR: %+v", err)
+			return
+		}
+		incident.Time = time.Time{}
+		incidents = append(incidents, incident)
+	}
+	err = cursor.Err()
+	if err != nil {
+		err = errors.WithStack(err)
+		t.Fatalf("ERROR: %+v", err)
+		return
+	}
+	if !reflect.DeepEqual(expected, incidents) {
+		t.Fatal(expected, incidents)
 	}
 }

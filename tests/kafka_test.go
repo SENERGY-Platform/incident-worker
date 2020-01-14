@@ -30,7 +30,27 @@ import (
 	"time"
 )
 
+func sendDefinitionDeleteToKafka(t *testing.T, config configuration.Config, id string) {
+	cmd := messages.ProcessDefinitionEvent{
+		Command: "DELETE",
+		Id:      id,
+	}
+	sendToKafka(t, config, cmd.Id, config.KafkaProcessDefinitionEventTopic, cmd)
+}
+
+func sendInstanceDeleteToKafka(t *testing.T, config configuration.Config, id string) {
+	cmd := messages.ProcessInstanceHistoryEvent{
+		Command: "DELETE",
+		Id:      id,
+	}
+	sendToKafka(t, config, cmd.Id, config.KafkaProcessInstanceHistoryEventTopic, cmd)
+}
+
 func sendIncidentToKafka(t *testing.T, config configuration.Config, cmd messages.KafkaIncidentMessage) {
+	sendToKafka(t, config, cmd.Id, config.KafkaIncidentTopic, cmd)
+}
+
+func sendToKafka(t *testing.T, config configuration.Config, key string, topic string, msg interface{}) {
 	broker, err := util.GetBroker(config.ZookeeperUrl)
 	if err != nil {
 		err = errors.WithStack(err)
@@ -43,12 +63,11 @@ func sendIncidentToKafka(t *testing.T, config configuration.Config, cmd messages
 	}
 	writer := kafka.NewWriter(kafka.WriterConfig{
 		Brokers:     broker,
-		Topic:       config.KafkaIncidentTopic,
+		Topic:       topic,
 		MaxAttempts: 10,
 		Logger:      log.New(os.Stdout, "[KAFKA-PRODUCER] ", 0),
 	})
-
-	message, err := json.Marshal(cmd)
+	message, err := json.Marshal(msg)
 	if err != nil {
 		err = errors.WithStack(err)
 		t.Fatalf("ERROR: %+v", err)
@@ -57,7 +76,7 @@ func sendIncidentToKafka(t *testing.T, config configuration.Config, cmd messages
 
 	ctx, _ := context.WithTimeout(context.Background(), 2*time.Second)
 	err = writer.WriteMessages(ctx, kafka.Message{
-		Key:   []byte(cmd.Id),
+		Key:   []byte(key),
 		Value: message,
 		Time:  time.Now(),
 	})

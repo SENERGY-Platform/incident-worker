@@ -29,33 +29,6 @@ import (
 	"time"
 )
 
-func TestInit(t *testing.T) {
-	defaultConfig, err := configuration.LoadConfig("../config.json")
-	if err != nil {
-		t.Error(err)
-		return
-	}
-	defaultConfig.Debug = true
-
-	ctx, cancel := context.WithCancel(context.Background())
-	defer time.Sleep(10 * time.Second) //wait for docker cleanup
-	defer cancel()
-
-	config, err := server.New(ctx, defaultConfig)
-	if err != nil {
-		t.Error(err)
-		return
-	}
-
-	err = lib.StartWith(ctx, config, source.Factory, camunda.Factory, database.Factory, func(err error) {
-		t.Errorf("ERROR: %+v", err)
-	})
-	if err != nil {
-		t.Error(err)
-		return
-	}
-}
-
 func TestDatabase(t *testing.T) {
 	defaultConfig, err := configuration.LoadConfig("../config.json")
 	if err != nil {
@@ -84,13 +57,14 @@ func TestDatabase(t *testing.T) {
 
 	incident := messages.KafkaIncidentMessage{
 		Id:                  "foo_id",
-		MsgVersion:          1,
+		MsgVersion:          2,
 		ExternalTaskId:      "task_id",
 		ProcessInstanceId:   "piid",
 		ProcessDefinitionId: "pdid",
 		WorkerId:            "w",
 		ErrorMessage:        "error message",
 		Time:                time.Now(),
+		DeploymentName:      "pdid",
 	}
 
 	t.Run("send incident", func(t *testing.T) {
@@ -148,7 +122,7 @@ func TestCamunda(t *testing.T) {
 
 	incident := messages.KafkaIncidentMessage{
 		Id:                  "foo_id",
-		MsgVersion:          1,
+		MsgVersion:          2,
 		ExternalTaskId:      "task_id",
 		ProcessInstanceId:   instanceId,
 		ProcessDefinitionId: definitionId,
@@ -172,4 +146,186 @@ func TestCamunda(t *testing.T) {
 		checkProcess(t, config, instanceId, false)
 	})
 
+}
+
+func TestDeleteByDeploymentId(t *testing.T) {
+	defaultConfig, err := configuration.LoadConfig("../config.json")
+	if err != nil {
+		t.Error(err)
+		return
+	}
+	defaultConfig.Debug = true
+
+	ctx, cancel := context.WithCancel(context.Background())
+	defer time.Sleep(10 * time.Second) //wait for docker cleanup
+	defer cancel()
+
+	config, err := server.New(ctx, defaultConfig)
+	if err != nil {
+		t.Error(err)
+		return
+	}
+
+	err = lib.StartWith(ctx, config, source.Factory, camunda.Factory, database.Factory, func(err error) {
+		t.Errorf("ERROR: %+v", err)
+	})
+	if err != nil {
+		t.Error(err)
+		return
+	}
+
+	incident11 := messages.KafkaIncidentMessage{
+		Id:                  "a",
+		MsgVersion:          2,
+		ExternalTaskId:      "task_id",
+		ProcessInstanceId:   "piid1",
+		ProcessDefinitionId: "pdid1",
+		WorkerId:            "w",
+		ErrorMessage:        "error message",
+		Time:                time.Time{},
+		DeploymentName:      "pdid1",
+	}
+	incident12 := messages.KafkaIncidentMessage{
+		Id:                  "b",
+		MsgVersion:          2,
+		ExternalTaskId:      "task_id",
+		ProcessInstanceId:   "piid1",
+		ProcessDefinitionId: "pdid2",
+		WorkerId:            "w",
+		ErrorMessage:        "error message",
+		Time:                time.Time{},
+		DeploymentName:      "pdid2",
+	}
+	incident21 := messages.KafkaIncidentMessage{
+		Id:                  "c",
+		MsgVersion:          2,
+		ExternalTaskId:      "task_id",
+		ProcessInstanceId:   "piid2",
+		ProcessDefinitionId: "pdid1",
+		WorkerId:            "w",
+		ErrorMessage:        "error message",
+		Time:                time.Time{},
+		DeploymentName:      "pdid1",
+	}
+	incident22 := messages.KafkaIncidentMessage{
+		Id:                  "d",
+		MsgVersion:          2,
+		ExternalTaskId:      "task_id",
+		ProcessInstanceId:   "piid2",
+		ProcessDefinitionId: "pdid2",
+		WorkerId:            "w",
+		ErrorMessage:        "error message",
+		Time:                time.Time{},
+		DeploymentName:      "pdid2",
+	}
+
+	t.Run("send incidents", func(t *testing.T) {
+		sendIncidentToKafka(t, config, incident11)
+		sendIncidentToKafka(t, config, incident12)
+		sendIncidentToKafka(t, config, incident21)
+		sendIncidentToKafka(t, config, incident22)
+	})
+
+	time.Sleep(10 * time.Second)
+
+	t.Run("send delete by deplymentId", func(t *testing.T) {
+		sendDefinitionDeleteToKafka(t, config, "pdid1")
+	})
+
+	time.Sleep(10 * time.Second)
+
+	t.Run("check database", func(t *testing.T) {
+		checkIncidentsInDatabase(t, config, incident12, incident22)
+	})
+}
+
+func TestDeleteByInstanceId(t *testing.T) {
+	defaultConfig, err := configuration.LoadConfig("../config.json")
+	if err != nil {
+		t.Error(err)
+		return
+	}
+	defaultConfig.Debug = true
+
+	ctx, cancel := context.WithCancel(context.Background())
+	defer time.Sleep(10 * time.Second) //wait for docker cleanup
+	defer cancel()
+
+	config, err := server.New(ctx, defaultConfig)
+	if err != nil {
+		t.Error(err)
+		return
+	}
+
+	err = lib.StartWith(ctx, config, source.Factory, camunda.Factory, database.Factory, func(err error) {
+		t.Errorf("ERROR: %+v", err)
+	})
+	if err != nil {
+		t.Error(err)
+		return
+	}
+
+	incident11 := messages.KafkaIncidentMessage{
+		Id:                  "a",
+		MsgVersion:          2,
+		ExternalTaskId:      "task_id",
+		ProcessInstanceId:   "piid1",
+		ProcessDefinitionId: "pdid1",
+		WorkerId:            "w",
+		ErrorMessage:        "error message",
+		Time:                time.Time{},
+		DeploymentName:      "pdid1",
+	}
+	incident12 := messages.KafkaIncidentMessage{
+		Id:                  "b",
+		MsgVersion:          2,
+		ExternalTaskId:      "task_id",
+		ProcessInstanceId:   "piid1",
+		ProcessDefinitionId: "pdid2",
+		WorkerId:            "w",
+		ErrorMessage:        "error message",
+		Time:                time.Time{},
+		DeploymentName:      "pdid2",
+	}
+	incident21 := messages.KafkaIncidentMessage{
+		Id:                  "c",
+		MsgVersion:          2,
+		ExternalTaskId:      "task_id",
+		ProcessInstanceId:   "piid2",
+		ProcessDefinitionId: "pdid1",
+		WorkerId:            "w",
+		ErrorMessage:        "error message",
+		Time:                time.Time{},
+		DeploymentName:      "pdid1",
+	}
+	incident22 := messages.KafkaIncidentMessage{
+		Id:                  "d",
+		MsgVersion:          2,
+		ExternalTaskId:      "task_id",
+		ProcessInstanceId:   "piid2",
+		ProcessDefinitionId: "pdid2",
+		WorkerId:            "w",
+		ErrorMessage:        "error message",
+		Time:                time.Time{},
+		DeploymentName:      "pdid2",
+	}
+
+	t.Run("send incidents", func(t *testing.T) {
+		sendIncidentToKafka(t, config, incident11)
+		sendIncidentToKafka(t, config, incident12)
+		sendIncidentToKafka(t, config, incident21)
+		sendIncidentToKafka(t, config, incident22)
+	})
+
+	time.Sleep(10 * time.Second)
+
+	t.Run("send delete by instance", func(t *testing.T) {
+		sendInstanceDeleteToKafka(t, config, "piid1")
+	})
+
+	time.Sleep(10 * time.Second)
+
+	t.Run("check database", func(t *testing.T) {
+		checkIncidentsInDatabase(t, config, incident21, incident22)
+	})
 }
