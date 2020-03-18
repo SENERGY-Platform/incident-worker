@@ -88,6 +88,10 @@ func InitTopicWithConfig(zkUrl string, numPartitions int, replicationFactor int,
 			Topic:             topic,
 			NumPartitions:     numPartitions,
 			ReplicationFactor: replicationFactor,
+			ConfigEntries: []kafka.ConfigEntry{
+				{ConfigName: "retention.ms", ConfigValue: "-1"},
+				{ConfigName: "retention.bytes", ConfigValue: "-1"},
+			},
 		})
 		if err != nil {
 			return errors.WithStack(err)
