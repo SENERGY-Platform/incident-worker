@@ -30,7 +30,7 @@ import (
 	"time"
 )
 
-func checkIncidentInDatabase(t *testing.T, config configuration.Config, expected messages.KafkaIncidentMessage) {
+func checkIncidentInDatabase(t *testing.T, config configuration.Config, expected messages.Incident) {
 	ctx, _ := context.WithTimeout(context.Background(), 2*time.Second)
 	client, err := mongo.Connect(ctx, options.Client().ApplyURI(config.MongoUrl))
 	if err != nil {
@@ -45,7 +45,7 @@ func checkIncidentInDatabase(t *testing.T, config configuration.Config, expected
 		t.Fatalf("ERROR: %+v", err)
 		return
 	}
-	compare := messages.KafkaIncidentMessage{}
+	compare := messages.Incident{}
 	err = result.Decode(&compare)
 	if err != nil {
 		err = errors.WithStack(err)
@@ -63,7 +63,7 @@ func checkIncidentInDatabase(t *testing.T, config configuration.Config, expected
 	}
 }
 
-func checkIncidentsInDatabase(t *testing.T, config configuration.Config, expected ...messages.KafkaIncidentMessage) {
+func checkIncidentsInDatabase(t *testing.T, config configuration.Config, expected ...messages.Incident) {
 	ctx, _ := context.WithTimeout(context.Background(), 2*time.Second)
 	client, err := mongo.Connect(ctx, options.Client().ApplyURI(config.MongoUrl))
 	if err != nil {
@@ -76,7 +76,7 @@ func checkIncidentsInDatabase(t *testing.T, config configuration.Config, expecte
 			{"id", bsonx.Int32(1)},
 		})
 
-	incidents := []messages.KafkaIncidentMessage{}
+	incidents := []messages.Incident{}
 	cursor, err := client.Database(config.MongoDatabaseName).Collection(config.MongoIncidentCollectionName).Find(ctx, bson.M{}, option)
 	if err != nil {
 		err = errors.WithStack(err)
@@ -84,7 +84,7 @@ func checkIncidentsInDatabase(t *testing.T, config configuration.Config, expecte
 		return
 	}
 	for cursor.Next(context.Background()) {
-		incident := messages.KafkaIncidentMessage{}
+		incident := messages.Incident{}
 		err = cursor.Decode(&incident)
 		if err != nil {
 			err = errors.WithStack(err)

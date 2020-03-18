@@ -60,7 +60,7 @@ func New(ctx context.Context, config configuration.Config) (result *Mongo, err e
 	return result, nil
 }
 
-func (this *Mongo) Save(incident messages.KafkaIncidentMessage) error {
+func (this *Mongo) Save(incident messages.Incident) error {
 	ctx, _ := context.WithTimeout(context.Background(), TIMEOUT)
 	_, err := this.collection().ReplaceOne(ctx, bson.M{"id": incident.Id}, incident, options.Replace().SetUpsert(true))
 	return errors.WithStack(err)

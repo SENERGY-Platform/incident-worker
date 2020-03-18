@@ -31,23 +31,34 @@ import (
 )
 
 func sendDefinitionDeleteToKafka(t *testing.T, config configuration.Config, id string) {
-	cmd := messages.ProcessDefinitionEvent{
-		Command: "DELETE",
-		Id:      id,
+	cmd := messages.KafkaIncidentsCommand{
+		Command:             "DELETE",
+		MsgVersion:          3,
+		ProcessDefinitionId: id,
 	}
-	sendToKafka(t, config, cmd.Id, config.KafkaProcessDefinitionEventTopic, cmd)
+	sendToKafka(t, config, id, config.KafkaIncidentTopic, cmd)
 }
 
 func sendInstanceDeleteToKafka(t *testing.T, config configuration.Config, id string) {
-	cmd := messages.ProcessInstanceHistoryEvent{
-		Command: "DELETE",
-		Id:      id,
+	cmd := messages.KafkaIncidentsCommand{
+		Command:           "DELETE",
+		MsgVersion:        3,
+		ProcessInstanceId: id,
 	}
-	sendToKafka(t, config, cmd.Id, config.KafkaProcessInstanceHistoryEventTopic, cmd)
+	sendToKafka(t, config, id, config.KafkaIncidentTopic, cmd)
 }
 
-func sendIncidentToKafka(t *testing.T, config configuration.Config, cmd messages.KafkaIncidentMessage) {
+func sendIncidentToKafka(t *testing.T, config configuration.Config, cmd messages.Incident) {
 	sendToKafka(t, config, cmd.Id, config.KafkaIncidentTopic, cmd)
+}
+
+func sendIncidentV3ToKafka(t *testing.T, config configuration.Config, incident messages.Incident) {
+	incident.MsgVersion = 3
+	sendToKafka(t, config, incident.Id, config.KafkaIncidentTopic, messages.KafkaIncidentsCommand{
+		Command:    "POST",
+		MsgVersion: 3,
+		Incident:   &incident,
+	})
 }
 
 func sendToKafka(t *testing.T, config configuration.Config, key string, topic string, msg interface{}) {

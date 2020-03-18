@@ -3,8 +3,6 @@
   "zookeeper_url":"zk",
   "kafka_consumer_group":"incident-worker",
   "kafka_incident_topic":"camunda_incident",
-  "kafka_process_definition_event_topic": "process-definition-event",
-  "kafka_process_instance_history_event_topic": "process-instance-history-event",
   "debug":true,
   "mongo_url":"mongodb://localhost:27017",
   "mongo_database_name":"incidents",

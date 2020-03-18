@@ -23,9 +23,7 @@ import (
 )
 
 type Controller interface {
-	HandleIncident(incident messages.KafkaIncidentMessage) error
-	HandleProcessInstanceHistoryEvent(message messages.ProcessInstanceHistoryEvent) error
-	HandleProcessDefinitionEvent(message messages.ProcessDefinitionEvent) error
+	HandleIncidentMessage(incident []byte) error
 }
 
 type Camunda interface {
@@ -38,7 +36,7 @@ type CamundaFactory interface {
 }
 
 type Database interface {
-	Save(incident messages.KafkaIncidentMessage) error
+	Save(incident messages.Incident) error
 	DeleteByInstanceId(id string) error
 	DeleteByDefinitionId(id string) error
 }

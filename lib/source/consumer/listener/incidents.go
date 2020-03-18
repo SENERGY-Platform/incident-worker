@@ -17,11 +17,8 @@
 package listener
 
 import (
-	"encoding/json"
 	"github.com/SENERGY-Platform/process-incident-worker/lib/configuration"
 	"github.com/SENERGY-Platform/process-incident-worker/lib/interfaces"
-	"github.com/SENERGY-Platform/process-incident-worker/lib/messages"
-	"github.com/pkg/errors"
 	"log"
 )
 
@@ -36,13 +33,7 @@ func IncidentListenerFactory(config configuration.Config, control interfaces.Con
 				log.Printf("ERROR: %+v \n", err)
 			}
 		}()
-		incident := messages.KafkaIncidentMessage{}
-		err = json.Unmarshal(msg, &incident)
-		if err != nil {
-			err = errors.WithStack(err)
-			return
-		}
-		err = control.HandleIncident(incident)
+		err = control.HandleIncidentMessage(msg)
 		return
 	}, nil
 }
