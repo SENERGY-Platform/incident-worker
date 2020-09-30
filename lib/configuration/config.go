@@ -28,7 +28,7 @@ import (
 )
 
 type Config struct {
-	CamundaUrl                  string `json:"camunda_url"`
+	ShardsDb                    string `json:"shards_db"`
 	ZookeeperUrl                string `json:"zookeeper_url"`
 	KafkaConsumerGroup          string `json:"kafka_consumer_group"`
 	KafkaIncidentTopic          string `json:"kafka_incident_topic"`

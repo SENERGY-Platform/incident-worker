@@ -1,5 +1,5 @@
 {
-  "camunda_url":"http://camunda:8080",
+  "shards_db":"postgres://usr:pw@databasip:5432/shards?sslmode=disable",
   "zookeeper_url":"zk",
   "kafka_consumer_group":"incident-worker",
   "kafka_incident_topic":"camunda_incident",

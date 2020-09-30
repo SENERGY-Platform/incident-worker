@@ -90,11 +90,11 @@ func (this *Controller) HandleIncidentMessage(msg []byte) error {
 }
 
 func (this *Controller) CreateIncident(incident messages.Incident) (err error) {
-	err = this.camunda.StopProcessInstance(incident.ProcessInstanceId)
+	err = this.camunda.StopProcessInstance(incident.ProcessInstanceId, incident.TenantId)
 	if err != nil {
 		return err
 	}
-	name, err := this.camunda.GetProcessName(incident.ProcessDefinitionId)
+	name, err := this.camunda.GetProcessName(incident.ProcessDefinitionId, incident.TenantId)
 	if err != nil {
 		log.Println("WARNING: unable to get process name", err)
 		incident.DeploymentName = incident.ProcessDefinitionId

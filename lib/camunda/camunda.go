@@ -19,6 +19,8 @@ package camunda
 import (
 	"context"
 	"encoding/json"
+	"github.com/SENERGY-Platform/process-incident-worker/lib/camunda/cache"
+	"github.com/SENERGY-Platform/process-incident-worker/lib/camunda/shards"
 	"github.com/SENERGY-Platform/process-incident-worker/lib/configuration"
 	"github.com/SENERGY-Platform/process-incident-worker/lib/interfaces"
 	"github.com/pkg/errors"
@@ -36,15 +38,24 @@ var Factory = &FactoryType{}
 
 type Camunda struct {
 	config configuration.Config
+	shards *shards.Shards
 }
 
 func (this *FactoryType) Get(ctx context.Context, config configuration.Config) (interfaces.Camunda, error) {
-	return &Camunda{config: config}, nil
+	s, err := shards.New(config.ShardsDb, cache.New(&cache.CacheConfig{L1Expiration: 60}))
+	if err != nil {
+		return nil, err
+	}
+	return &Camunda{config: config, shards: s}, nil
 }
 
-func (this *Camunda) StopProcessInstance(id string) (err error) {
+func (this *Camunda) StopProcessInstance(id string, tenantId string) (err error) {
+	shard, err := this.shards.GetShardForUser(tenantId)
+	if err != nil {
+		return err
+	}
 	client := &http.Client{Timeout: 5 * time.Second}
-	request, err := http.NewRequest("DELETE", this.config.CamundaUrl+"/engine-rest/process-instance/"+url.PathEscape(id)+"?skipIoMappings=true", nil)
+	request, err := http.NewRequest("DELETE", shard+"/engine-rest/process-instance/"+url.PathEscape(id)+"?skipIoMappings=true", nil)
 	if err != nil {
 		return errors.WithStack(err)
 	}
@@ -60,7 +71,7 @@ func (this *Camunda) StopProcessInstance(id string) (err error) {
 		return nil
 	}
 	msg, _ := ioutil.ReadAll(resp.Body)
-	err = errors.New("error on delete in engine for " + this.config.CamundaUrl + "/engine-rest/process-instance/" + url.PathEscape(id) + ": " + resp.Status + " " + string(msg))
+	err = errors.New("error on delete in engine for " + shard + "/engine-rest/process-instance/" + url.PathEscape(id) + ": " + resp.Status + " " + string(msg))
 	return err
 }
 
@@ -68,9 +79,13 @@ type NameWrapper struct {
 	Name string `json:"name"`
 }
 
-func (this *Camunda) GetProcessName(id string) (name string, err error) {
+func (this *Camunda) GetProcessName(id string, tenantId string) (name string, err error) {
+	shard, err := this.shards.GetShardForUser(tenantId)
+	if err != nil {
+		return "", errors.WithStack(err)
+	}
 	client := &http.Client{Timeout: 5 * time.Second}
-	request, err := http.NewRequest("GET", this.config.CamundaUrl+"/engine-rest/process-definition/"+url.PathEscape(id), nil)
+	request, err := http.NewRequest("GET", shard+"/engine-rest/process-definition/"+url.PathEscape(id), nil)
 	if err != nil {
 		return "", errors.WithStack(err)
 	}

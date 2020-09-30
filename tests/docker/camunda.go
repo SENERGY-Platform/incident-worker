@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package server
+package docker
 
 import (
 	"context"
@@ -25,6 +25,7 @@ import (
 	"github.com/ory/dockertest"
 	"log"
 	"net/http"
+	"sync"
 )
 
 func Camunda(pool *dockertest.Pool, ctx context.Context, pgIp string, pgPort string) (hostPort string, ipAddress string, err error) {
@@ -64,7 +65,7 @@ func Camunda(pool *dockertest.Pool, ctx context.Context, pgIp string, pgPort str
 	return hostPort, camunda.Container.NetworkSettings.IPAddress, err
 }
 
-func Postgres(pool *dockertest.Pool, ctx context.Context, dbName string) (hostPort string, ipAddress string, pgStr string, err error) {
+func Postgres(pool *dockertest.Pool, ctx context.Context, wg *sync.WaitGroup, dbName string) (hostPort string, ipAddress string, pgStr string, err error) {
 	log.Println("start postgres")
 	container, err := pool.Run("postgres", "latest", []string{
 		"POSTGRES_DB=" + dbName, "POSTGRES_PASSWORD=pw", "POSTGRES_USER=usr",
@@ -73,9 +74,15 @@ func Postgres(pool *dockertest.Pool, ctx context.Context, dbName string) (hostPo
 		return "", "", "", err
 	}
 	hostPort = container.GetPort("5432/tcp")
+	if wg != nil {
+		wg.Add(1)
+	}
 	go func() {
 		<-ctx.Done()
 		container.Close()
+		if wg != nil {
+			wg.Done()
+		}
 	}()
 	go Dockerlog(pool, ctx, container, "POSTGRES")
 	pgStr = fmt.Sprintf("postgres://usr:pw@localhost:%s/%s?sslmode=disable", hostPort, dbName)

@@ -20,6 +20,8 @@ import (
 	"bytes"
 	"encoding/json"
 	"errors"
+	"github.com/SENERGY-Platform/process-incident-worker/lib/camunda/cache"
+	"github.com/SENERGY-Platform/process-incident-worker/lib/camunda/shards"
 	"github.com/SENERGY-Platform/process-incident-worker/lib/configuration"
 	"io/ioutil"
 	"log"
@@ -43,8 +45,20 @@ func deployProcess(t *testing.T, config configuration.Config) (id string) {
 }
 
 func checkProcess(t *testing.T, config configuration.Config, instanceId string, expectExistence bool) {
+	s, err := shards.New(config.ShardsDb, cache.None)
+	if err != nil {
+		t.Fatal(err)
+		return
+	}
+
+	shard, err := s.EnsureShardForUser("")
+	if err != nil {
+		t.Fatal(err)
+		return
+	}
+
 	client := &http.Client{Timeout: 5 * time.Second}
-	request, err := http.NewRequest("GET", config.CamundaUrl+"/engine-rest/process-instance/"+url.QueryEscape(instanceId), nil)
+	request, err := http.NewRequest("GET", shard+"/engine-rest/process-instance/"+url.QueryEscape(instanceId), nil)
 	if err != nil {
 		t.Fatal(err)
 		return
@@ -64,8 +78,19 @@ func checkProcess(t *testing.T, config configuration.Config, instanceId string, 
 }
 
 func startProcess(t *testing.T, config configuration.Config, processDefinitionId string) string {
+	s, err := shards.New(config.ShardsDb, cache.None)
+	if err != nil {
+		t.Fatal(err)
+		return ""
+	}
+
+	shard, err := s.EnsureShardForUser("")
+	if err != nil {
+		t.Fatal(err)
+		return ""
+	}
 	client := &http.Client{Timeout: 5 * time.Second}
-	request, err := http.NewRequest("POST", config.CamundaUrl+"/engine-rest/process-definition/"+url.QueryEscape(processDefinitionId)+"/start", bytes.NewBuffer([]byte("{}")))
+	request, err := http.NewRequest("POST", shard+"/engine-rest/process-definition/"+url.QueryEscape(processDefinitionId)+"/start", bytes.NewBuffer([]byte("{}")))
 	if err != nil {
 		t.Fatal(err)
 		return ""
@@ -92,10 +117,19 @@ func startProcess(t *testing.T, config configuration.Config, processDefinitionId
 }
 
 func deployProcessRequest(config configuration.Config, name string) (id string, err error) {
+	s, err := shards.New(config.ShardsDb, cache.None)
+	if err != nil {
+		return id, err
+	}
+
+	shard, err := s.EnsureShardForUser("")
+	if err != nil {
+		return id, err
+	}
 	result := map[string]interface{}{}
 	boundary := "---------------------------" + time.Now().String()
 	b := strings.NewReader(buildPayLoad(name, strings.ReplaceAll(xml, "__name__", name), "<svg/>", boundary, "test"))
-	resp, err := http.Post(config.CamundaUrl+"/engine-rest/deployment/create", "multipart/form-data; boundary="+boundary, b)
+	resp, err := http.Post(shard+"/engine-rest/deployment/create", "multipart/form-data; boundary="+boundary, b)
 	if err != nil {
 		log.Println("ERROR: request to processengine ", err)
 		return id, err

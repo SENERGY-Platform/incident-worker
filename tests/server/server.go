@@ -18,14 +18,13 @@ package server
 
 import (
 	"context"
+	"github.com/SENERGY-Platform/process-incident-worker/lib/camunda/cache"
+	"github.com/SENERGY-Platform/process-incident-worker/lib/camunda/shards"
 	"github.com/SENERGY-Platform/process-incident-worker/lib/configuration"
+	"github.com/SENERGY-Platform/process-incident-worker/tests/docker"
 	"github.com/ory/dockertest"
-	"github.com/ory/dockertest/docker"
 	"log"
-	"net"
-	"os"
 	"runtime/debug"
-	"strconv"
 )
 
 func New(parentCtx context.Context, init configuration.Config) (config configuration.Config, err error) {
@@ -41,7 +40,7 @@ func New(parentCtx context.Context, init configuration.Config) (config configura
 		return config, err
 	}
 
-	_, zk, err := Zookeeper(pool, ctx)
+	_, zk, err := docker.Zookeeper(pool, ctx)
 	if err != nil {
 		log.Println("ERROR:", err)
 		debug.PrintStack()
@@ -50,7 +49,7 @@ func New(parentCtx context.Context, init configuration.Config) (config configura
 	}
 	config.ZookeeperUrl = zk + ":2181"
 
-	err = Kafka(pool, ctx, config.ZookeeperUrl)
+	err = docker.Kafka(pool, ctx, config.ZookeeperUrl)
 	if err != nil {
 		log.Println("ERROR:", err)
 		debug.PrintStack()
@@ -58,7 +57,7 @@ func New(parentCtx context.Context, init configuration.Config) (config configura
 		return config, err
 	}
 
-	_, pgIp, _, err := Postgres(pool, ctx, "camunda")
+	_, pgIp, _, err := docker.Postgres(pool, ctx, nil, "camunda")
 	if err != nil {
 		log.Println("ERROR:", err)
 		debug.PrintStack()
@@ -66,16 +65,48 @@ func New(parentCtx context.Context, init configuration.Config) (config configura
 		return config, err
 	}
 
-	_, camundaIp, err := Camunda(pool, ctx, pgIp, "5432")
+	_, camundaIp, err := docker.Camunda(pool, ctx, pgIp, "5432")
 	if err != nil {
 		log.Println("ERROR:", err)
 		debug.PrintStack()
 		cancel()
 		return config, err
 	}
-	config.CamundaUrl = "http://" + camundaIp + ":8080"
 
-	_, ip, err := Mongo(pool, ctx)
+	_, _, shardsDb, err := docker.Postgres(pool, ctx, nil, "shards")
+	if err != nil {
+		log.Println("ERROR:", err)
+		debug.PrintStack()
+		cancel()
+		return config, err
+	}
+	config.ShardsDb = shardsDb
+
+	s, err := shards.New(shardsDb, cache.None)
+	if err != nil {
+		log.Println("ERROR:", err)
+		debug.PrintStack()
+		cancel()
+		return config, err
+	}
+
+	err = s.EnsureShard("http://" + camundaIp + ":8080")
+	if err != nil {
+		log.Println("ERROR:", err)
+		debug.PrintStack()
+		cancel()
+		return config, err
+	}
+
+	_, err = s.EnsureShardForUser("")
+	if err != nil {
+		log.Println("ERROR:", err)
+		debug.PrintStack()
+		cancel()
+		return config, err
+	}
+
+	_, ip, err := docker.Mongo(pool, ctx)
 	if err != nil {
 		log.Println("ERROR:", err)
 		debug.PrintStack()
@@ -85,51 +116,4 @@ func New(parentCtx context.Context, init configuration.Config) (config configura
 	config.MongoUrl = "mongodb://" + ip + ":27017"
 
 	return config, nil
-}
-
-func Dockerlog(pool *dockertest.Pool, ctx context.Context, repo *dockertest.Resource, name string) {
-	out := &LogWriter{logger: log.New(os.Stdout, "["+name+"]", 0)}
-	err := pool.Client.Logs(docker.LogsOptions{
-		Stdout:       true,
-		Stderr:       true,
-		Context:      ctx,
-		Container:    repo.Container.ID,
-		Follow:       true,
-		OutputStream: out,
-		ErrorStream:  out,
-	})
-	if err != nil && err != context.Canceled {
-		log.Println("DEBUG-ERROR: unable to start docker log", name, err)
-	}
-}
-
-type LogWriter struct {
-	logger *log.Logger
-}
-
-func (this *LogWriter) Write(p []byte) (n int, err error) {
-	this.logger.Print(string(p))
-	return len(p), nil
-}
-
-func getFreePortStr() (string, error) {
-	intPort, err := getFreePort()
-	if err != nil {
-		return "", err
-	}
-	return strconv.Itoa(intPort), nil
-}
-
-func getFreePort() (int, error) {
-	addr, err := net.ResolveTCPAddr("tcp", "localhost:0")
-	if err != nil {
-		return 0, err
-	}
-
-	listener, err := net.ListenTCP("tcp", addr)
-	if err != nil {
-		return 0, err
-	}
-	defer listener.Close()
-	return listener.Addr().(*net.TCPAddr).Port, nil
 }
