@@ -1,6 +1,6 @@
 module github.com/SENERGY-Platform/process-incident-worker
 
-go 1.13
+go 1.15
 
 require (
 	github.com/Nvveen/Gotty v0.0.0-20120604004816-cd527374f1e5 // indirect
