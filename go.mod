@@ -1,27 +1,15 @@
 module github.com/SENERGY-Platform/process-incident-worker
 
-go 1.15
+go 1.16
 
 require (
-	github.com/Nvveen/Gotty v0.0.0-20120604004816-cd527374f1e5 // indirect
-	github.com/SENERGY-Platform/external-task-worker v0.0.0-20200907092141-6ed8c672be14 // indirect
 	github.com/bradfitz/gomemcache v0.0.0-20190913173617-a41fca850d0b
-	github.com/cenkalti/backoff v2.2.1+incompatible // indirect
-	github.com/containerd/continuity v0.0.0-20190827140505-75bee3e2ccb6 // indirect
 	github.com/coocood/freecache v1.1.1
-	github.com/docker/go-connections v0.4.0 // indirect
-	github.com/docker/go-units v0.4.0 // indirect
-	github.com/go-stack/stack v1.8.0 // indirect
 	github.com/lib/pq v1.2.0
-	github.com/opencontainers/go-digest v1.0.0-rc1 // indirect
-	github.com/opencontainers/image-spec v1.0.1 // indirect
-	github.com/ory/dockertest v3.3.5+incompatible
 	github.com/ory/dockertest/v3 v3.6.0
-	github.com/pkg/errors v0.8.1
+	github.com/pkg/errors v0.9.1
 	github.com/samuel/go-zookeeper v0.0.0-20190923202752-2cc03de413da // indirect
-	github.com/segmentio/kafka-go v0.3.4
-	github.com/sirupsen/logrus v1.4.2 // indirect
+	github.com/segmentio/kafka-go v0.4.15
 	github.com/wvanbergen/kazoo-go v0.0.0-20180202103751-f72d8611297a
-	go.mongodb.org/mongo-driver v1.1.3
-	golang.org/x/sync v0.0.0-20190911185100-cd5d95a43a6e // indirect
+	go.mongodb.org/mongo-driver v1.7.0
 )

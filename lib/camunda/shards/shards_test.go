@@ -4,7 +4,7 @@ import (
 	"context"
 	"github.com/SENERGY-Platform/process-incident-worker/lib/camunda/cache"
 	"github.com/SENERGY-Platform/process-incident-worker/tests/docker"
-	"github.com/ory/dockertest"
+	"github.com/ory/dockertest/v3"
 	"reflect"
 	"sync"
 	"testing"
