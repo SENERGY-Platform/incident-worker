@@ -22,6 +22,7 @@ import (
 	"github.com/wvanbergen/kazoo-go"
 	"io/ioutil"
 	"log"
+	"strings"
 )
 
 func GetBroker(zk string) (brokers []string, err error) {
@@ -66,11 +67,11 @@ func GetKafkaController(zkUrl string) (controller string, err error) {
 	return brokers[controllerId], err
 }
 
-func InitTopic(zkUrl string, topics ...string) (err error) {
-	return InitTopicWithConfig(zkUrl, 1, 1, topics...)
+func InitTopic(zkUrl string, configMap map[string][]kafka.ConfigEntry, topics ...string) (err error) {
+	return InitTopicWithConfig(zkUrl, configMap, 1, 1, topics...)
 }
 
-func InitTopicWithConfig(zkUrl string, numPartitions int, replicationFactor int, topics ...string) (err error) {
+func InitTopicWithConfig(zkUrl string, configMap map[string][]kafka.ConfigEntry, numPartitions int, replicationFactor int, topics ...string) (err error) {
 	controller, err := GetKafkaController(zkUrl)
 	if err != nil {
 		return err
@@ -88,13 +89,26 @@ func InitTopicWithConfig(zkUrl string, numPartitions int, replicationFactor int,
 			Topic:             topic,
 			NumPartitions:     numPartitions,
 			ReplicationFactor: replicationFactor,
-			ConfigEntries: []kafka.ConfigEntry{
-				{ConfigName: "retention.ms", ConfigValue: "-1"},
-				{ConfigName: "retention.bytes", ConfigValue: "-1"},
-			},
+			ConfigEntries:     GetTopicConfig(configMap, topic),
 		})
 		if err != nil {
 			return errors.WithStack(err)
+		}
+	}
+	return nil
+}
+
+func GetTopicConfig(configMap map[string][]kafka.ConfigEntry, topic string) []kafka.ConfigEntry {
+	if configMap == nil {
+		return nil
+	}
+	result, exists := configMap[topic]
+	if exists {
+		return result
+	}
+	for key, conf := range configMap {
+		if strings.HasPrefix(topic, key) {
+			return conf
 		}
 	}
 	return nil

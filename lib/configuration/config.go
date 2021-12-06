@@ -20,6 +20,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/pkg/errors"
+	"github.com/segmentio/kafka-go"
 	"os"
 	"reflect"
 	"regexp"
@@ -28,14 +29,15 @@ import (
 )
 
 type Config struct {
-	ShardsDb                    string `json:"shards_db"`
-	ZookeeperUrl                string `json:"zookeeper_url"`
-	KafkaConsumerGroup          string `json:"kafka_consumer_group"`
-	KafkaIncidentTopic          string `json:"kafka_incident_topic"`
-	Debug                       bool   `json:"debug"`
-	MongoUrl                    string `json:"mongo_url"`
-	MongoDatabaseName           string `json:"mongo_database_name"`
-	MongoIncidentCollectionName string `json:"mongo_incident_collection_name"`
+	ShardsDb                    string                         `json:"shards_db"`
+	ZookeeperUrl                string                         `json:"zookeeper_url"`
+	KafkaConsumerGroup          string                         `json:"kafka_consumer_group"`
+	KafkaIncidentTopic          string                         `json:"kafka_incident_topic"`
+	Debug                       bool                           `json:"debug"`
+	MongoUrl                    string                         `json:"mongo_url"`
+	MongoDatabaseName           string                         `json:"mongo_database_name"`
+	MongoIncidentCollectionName string                         `json:"mongo_incident_collection_name"`
+	TopicConfigMap              map[string][]kafka.ConfigEntry `json:"topic_config_map"`
 }
 
 //loads config from json in location and used environment variables (e.g ZookeeperUrl --> ZOOKEEPER_URL)

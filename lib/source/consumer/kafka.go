@@ -27,23 +27,24 @@ import (
 	"time"
 )
 
-func RunConsumer(ctx context.Context, zk string, groupid string, topic string, debug bool, listener func(topic string, msg []byte) error, errorhandler func(err error)) (err error) {
-	consumer := &Consumer{groupId: groupid, zkUrl: zk, topic: topic, listener: listener, errorhandler: errorhandler, ctx: ctx, debug: debug}
+func RunConsumer(ctx context.Context, zk string, groupid string, topic string, debug bool, topicConfigMap map[string][]kafka.ConfigEntry, listener func(topic string, msg []byte) error, errorhandler func(err error)) (err error) {
+	consumer := &Consumer{groupId: groupid, zkUrl: zk, topic: topic, listener: listener, errorhandler: errorhandler, ctx: ctx, debug: debug, topicConfigMap: topicConfigMap}
 	err = consumer.start()
 	return
 }
 
 type Consumer struct {
-	count        int
-	zkUrl        string
-	groupId      string
-	topic        string
-	ctx          context.Context
-	cancel       context.CancelFunc
-	listener     func(topic string, msg []byte) error
-	errorhandler func(err error)
-	mux          sync.Mutex
-	debug        bool
+	count          int
+	zkUrl          string
+	groupId        string
+	topic          string
+	ctx            context.Context
+	cancel         context.CancelFunc
+	listener       func(topic string, msg []byte) error
+	errorhandler   func(err error)
+	mux            sync.Mutex
+	debug          bool
+	topicConfigMap map[string][]kafka.ConfigEntry
 }
 
 func (this *Consumer) start() error {
@@ -54,7 +55,7 @@ func (this *Consumer) start() error {
 	if err != nil {
 		return err
 	}
-	err = util.InitTopic(this.zkUrl, this.topic)
+	err = util.InitTopic(this.zkUrl, this.topicConfigMap, this.topic)
 	if err != nil {
 		return err
 	}

@@ -30,7 +30,7 @@ func Start(ctx context.Context, config configuration.Config, control interfaces.
 		if err != nil {
 			return err
 		}
-		err = RunConsumer(ctx, config.ZookeeperUrl, config.KafkaConsumerGroup, topic, config.Debug, func(topic string, msg []byte) error {
+		err = RunConsumer(ctx, config.ZookeeperUrl, config.KafkaConsumerGroup, topic, config.Debug, config.TopicConfigMap, func(topic string, msg []byte) error {
 			if config.Debug {
 				log.Println("DEBUG: consume", topic, string(msg))
 			}

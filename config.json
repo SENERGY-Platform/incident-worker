@@ -1,10 +1,18 @@
 {
-  "shards_db":"postgres://usr:pw@databasip:5432/shards?sslmode=disable",
-  "zookeeper_url":"zk",
-  "kafka_consumer_group":"incident-worker",
-  "kafka_incident_topic":"camunda_incident",
-  "debug":true,
-  "mongo_url":"mongodb://localhost:27017",
-  "mongo_database_name":"incidents",
-  "mongo_incident_collection_name":"incidents"
+    "shards_db":"postgres://usr:pw@databasip:5432/shards?sslmode=disable",
+    "zookeeper_url":"zk",
+    "kafka_consumer_group":"incident-worker",
+    "kafka_incident_topic":"camunda_incident",
+    "debug":true,
+    "mongo_url":"mongodb://localhost:27017",
+    "mongo_database_name":"incidents",
+    "mongo_incident_collection_name":"incidents",
+    "topic_config_map": {
+        "camunda_incident": [
+            {
+                "ConfigName":  "retention.ms",
+                "ConfigValue": "604800000"
+            }
+        ]
+    }
 }
