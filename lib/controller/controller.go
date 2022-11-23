@@ -22,6 +22,7 @@ import (
 	"github.com/SENERGY-Platform/process-incident-worker/lib/configuration"
 	"github.com/SENERGY-Platform/process-incident-worker/lib/interfaces"
 	"github.com/SENERGY-Platform/process-incident-worker/lib/messages"
+	"github.com/SENERGY-Platform/process-incident-worker/lib/notification"
 	"log"
 	"runtime/debug"
 )
@@ -90,6 +91,13 @@ func (this *Controller) HandleIncidentMessage(msg []byte) error {
 }
 
 func (this *Controller) CreateIncident(incident messages.Incident) (err error) {
+	if incident.TenantId != "" {
+		_ = notification.Send(this.config.NotificationUrl, notification.Message{
+			UserId:  incident.TenantId,
+			Title:   "Process-Incident in " + incident.DeploymentName,
+			Message: incident.ErrorMessage,
+		})
+	}
 	err = this.camunda.StopProcessInstance(incident.ProcessInstanceId, incident.TenantId)
 	if err != nil {
 		return err

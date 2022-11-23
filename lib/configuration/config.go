@@ -38,9 +38,10 @@ type Config struct {
 	MongoDatabaseName           string                         `json:"mongo_database_name"`
 	MongoIncidentCollectionName string                         `json:"mongo_incident_collection_name"`
 	TopicConfigMap              map[string][]kafka.ConfigEntry `json:"topic_config_map"`
+	NotificationUrl             string                         `json:"notification_url"`
 }
 
-//loads config from json in location and used environment variables (e.g ZookeeperUrl --> ZOOKEEPER_URL)
+// loads config from json in location and used environment variables (e.g ZookeeperUrl --> ZOOKEEPER_URL)
 func LoadConfig(location string) (config Config, err error) {
 	file, err := os.Open(location)
 	if err != nil {
