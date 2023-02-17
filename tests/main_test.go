@@ -382,6 +382,11 @@ func TestDeleteByDeploymentId(t *testing.T) {
 		return
 	}
 
+	t.Run("send incidents handler", func(t *testing.T) {
+		sendIncidentHandler(t, config, "pdid1")
+		sendIncidentHandler(t, config, "pdid2")
+	})
+
 	incident11 := messages.Incident{
 		Id:                  "a",
 		ExternalTaskId:      "task_id",
@@ -444,6 +449,14 @@ func TestDeleteByDeploymentId(t *testing.T) {
 		incident21.MsgVersion = 3
 		incident22.MsgVersion = 3
 		checkIncidentsInDatabase(t, config, incident12, incident22)
+	})
+
+	t.Run("check on incidents handler in database", func(t *testing.T) {
+		checkOnIncidentsInDatabase(t, config, messages.OnIncident{
+			ProcessDefinitionId: "pdid2",
+			Restart:             false,
+			Notify:              false,
+		})
 	})
 }
 

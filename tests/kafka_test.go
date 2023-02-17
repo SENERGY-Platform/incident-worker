@@ -61,6 +61,18 @@ func sendIncidentV3ToKafka(t *testing.T, config configuration.Config, incident m
 	})
 }
 
+func sendIncidentHandler(t *testing.T, config configuration.Config, definitionId string) {
+	sendToKafka(t, config, definitionId, config.KafkaIncidentTopic, messages.KafkaIncidentsCommand{
+		Command:    "HANDLER",
+		MsgVersion: 3,
+		Handler: &messages.OnIncident{
+			ProcessDefinitionId: definitionId,
+			Restart:             false,
+			Notify:              false,
+		},
+	})
+}
+
 func sendToKafka(t *testing.T, config configuration.Config, key string, topic string, msg interface{}) {
 	broker, err := util.GetBroker(config.ZookeeperUrl)
 	if err != nil {

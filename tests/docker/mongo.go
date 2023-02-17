@@ -37,7 +37,7 @@ func Mongo(pool *dockertest.Pool, ctx context.Context) (hostPort string, ipAddre
 		log.Println("DEBUG: remove container " + repo.Container.Name)
 		repo.Close()
 	}()
-	go Dockerlog(pool, ctx, repo, "MONGO")
+	//go Dockerlog(pool, ctx, repo, "MONGO")
 	hostPort = repo.GetPort("27017/tcp")
 	err = pool.Retry(func() error {
 		log.Println("try mongodb connection...")

@@ -104,3 +104,40 @@ func checkIncidentsInDatabase(t *testing.T, config configuration.Config, expecte
 		t.Fatal(expected, incidents)
 	}
 }
+
+func checkOnIncidentsInDatabase(t *testing.T, config configuration.Config, expected ...messages.OnIncident) {
+	ctx, _ := context.WithTimeout(context.Background(), 2*time.Second)
+	client, err := mongo.Connect(ctx, options.Client().ApplyURI(config.MongoUrl))
+	if err != nil {
+		err = errors.WithStack(err)
+		t.Fatalf("ERROR: %+v", err)
+		return
+	}
+
+	result := []messages.OnIncident{}
+	cursor, err := client.Database(config.MongoDatabaseName).Collection(config.MongoOnIncidentCollectionName).Find(ctx, bson.M{}, nil)
+	if err != nil {
+		err = errors.WithStack(err)
+		t.Fatalf("ERROR: %+v", err)
+		return
+	}
+	for cursor.Next(context.Background()) {
+		element := messages.OnIncident{}
+		err = cursor.Decode(&element)
+		if err != nil {
+			err = errors.WithStack(err)
+			t.Fatalf("ERROR: %+v", err)
+			return
+		}
+		result = append(result, element)
+	}
+	err = cursor.Err()
+	if err != nil {
+		err = errors.WithStack(err)
+		t.Fatalf("ERROR: %+v", err)
+		return
+	}
+	if !reflect.DeepEqual(expected, result) {
+		t.Fatal(expected, result)
+	}
+}

@@ -30,7 +30,7 @@ import (
 
 func Camunda(pool *dockertest.Pool, ctx context.Context, pgIp string, pgPort string) (hostPort string, ipAddress string, err error) {
 	log.Println("start connectionlog")
-	camunda, err := pool.Run("fgseitsrancher.wifa.intern.uni-leipzig.de:5000/process-engine", "dev", []string{
+	camunda, err := pool.Run("ghcr.io/senergy-platform/process-engine", "dev", []string{
 		"DB_PASSWORD=pw",
 		"DB_URL=jdbc:postgresql://" + pgIp + ":" + pgPort + "/camunda",
 		"DB_PORT=" + pgPort,
@@ -48,7 +48,7 @@ func Camunda(pool *dockertest.Pool, ctx context.Context, pgIp string, pgPort str
 		<-ctx.Done()
 		camunda.Close()
 	}()
-	go Dockerlog(pool, ctx, camunda, "CAMUNDA")
+	//go Dockerlog(pool, ctx, camunda, "CAMUNDA")
 	hostPort = camunda.GetPort("8080/tcp")
 	err = pool.Retry(func() error {
 		log.Println("try camunda connection...")
@@ -84,7 +84,7 @@ func Postgres(pool *dockertest.Pool, ctx context.Context, wg *sync.WaitGroup, db
 			wg.Done()
 		}
 	}()
-	go Dockerlog(pool, ctx, container, "POSTGRES")
+	//go Dockerlog(pool, ctx, container, "POSTGRES")
 	pgStr = fmt.Sprintf("postgres://usr:pw@localhost:%s/%s?sslmode=disable", hostPort, dbName)
 	err = pool.Retry(func() error {
 		log.Println("try pg connection...")

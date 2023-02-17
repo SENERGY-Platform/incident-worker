@@ -17,6 +17,7 @@
 package camunda
 
 import (
+	"bytes"
 	"context"
 	"encoding/json"
 	"github.com/SENERGY-Platform/process-incident-worker/lib/camunda/cache"
@@ -24,7 +25,7 @@ import (
 	"github.com/SENERGY-Platform/process-incident-worker/lib/configuration"
 	"github.com/SENERGY-Platform/process-incident-worker/lib/interfaces"
 	"github.com/pkg/errors"
-	"io/ioutil"
+	"io"
 	"log"
 	"net/http"
 	"net/url"
@@ -70,7 +71,7 @@ func (this *Camunda) StopProcessInstance(id string, tenantId string) (err error)
 	if resp.StatusCode == 200 || resp.StatusCode == 204 {
 		return nil
 	}
-	msg, _ := ioutil.ReadAll(resp.Body)
+	msg, _ := io.ReadAll(resp.Body)
 	err = errors.New("error on delete in engine for " + shard + "/engine-rest/process-instance/" + url.PathEscape(id) + ": " + resp.Status + " " + string(msg))
 	return err
 }
@@ -95,7 +96,7 @@ func (this *Camunda) GetProcessName(id string, tenantId string) (name string, er
 	}
 	defer resp.Body.Close()
 	if resp.StatusCode != 200 {
-		temp, _ := ioutil.ReadAll(resp.Body)
+		temp, _ := io.ReadAll(resp.Body)
 		log.Println("ERROR:", resp.Status, string(temp))
 		debug.PrintStack()
 		return "", errors.New("unexpected response")
@@ -103,4 +104,83 @@ func (this *Camunda) GetProcessName(id string, tenantId string) (name string, er
 	result := NameWrapper{}
 	err = json.NewDecoder(resp.Body).Decode(&result)
 	return result.Name, errors.WithStack(err)
+}
+
+func (this *Camunda) StartProcess(processDefinitionId string, userId string) (err error) {
+	shard, err := this.shards.EnsureShardForUser(userId)
+	if err != nil {
+		return err
+	}
+
+	parameters, err := this.getProcessParameters(shard, processDefinitionId)
+	if err != nil {
+		return err
+	}
+	if len(parameters) > 0 {
+		return errors.New("restart of processes with start-parameters not supported")
+	}
+
+	//message := createStartMessage(nil)
+
+	b := new(bytes.Buffer)
+	err = json.NewEncoder(b).Encode(map[string]interface{}{})
+	if err != nil {
+		return
+	}
+	req, err := http.NewRequest("POST", shard+"/engine-rest/process-definition/"+url.QueryEscape(processDefinitionId)+"/submit-form", b)
+	if err != nil {
+		return err
+	}
+	req.Header.Set("Content-Type", "application/json")
+	resp, err := http.DefaultClient.Do(req)
+	if err != nil {
+		return err
+	}
+
+	defer resp.Body.Close()
+	temp, _ := io.ReadAll(resp.Body)
+
+	if resp.StatusCode != http.StatusOK {
+		err = errors.New(resp.Status + " " + string(temp))
+		return err
+	}
+	return nil
+}
+
+type Variable struct {
+	Value     interface{} `json:"value"`
+	Type      string      `json:"type"`
+	ValueInfo interface{} `json:"valueInfo"`
+}
+
+func (this *Camunda) getProcessParameters(shard string, processDefinitionId string) (result map[string]Variable, err error) {
+	req, err := http.NewRequest("GET", shard+"/engine-rest/process-definition/"+url.QueryEscape(processDefinitionId)+"/form-variables", nil)
+	if err != nil {
+		return result, err
+	}
+	resp, err := http.DefaultClient.Do(req)
+	if err != nil {
+		return result, err
+	}
+	defer resp.Body.Close()
+	if resp.StatusCode != http.StatusOK {
+		temp, _ := io.ReadAll(resp.Body)
+		err = errors.New(resp.Status + " " + string(temp))
+		return
+	}
+	err = json.NewDecoder(resp.Body).Decode(&result)
+	return
+}
+
+func createStartMessage(parameter map[string]interface{}) map[string]interface{} {
+	if len(parameter) == 0 {
+		return map[string]interface{}{}
+	}
+	variables := map[string]interface{}{}
+	for key, val := range parameter {
+		variables[key] = map[string]interface{}{
+			"value": val,
+		}
+	}
+	return map[string]interface{}{"variables": variables}
 }

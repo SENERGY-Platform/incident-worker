@@ -8,6 +8,7 @@
     "mongo_url":"mongodb://localhost:27017",
     "mongo_database_name":"incidents",
     "mongo_incident_collection_name":"incidents",
+    "mongo_on_incident_collection_name": "on_incident",
     "topic_config_map": {
         "camunda_incident": [
             {

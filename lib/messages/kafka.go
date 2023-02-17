@@ -19,11 +19,12 @@ package messages
 import "time"
 
 type KafkaIncidentsCommand struct {
-	Command             string    `json:"command"`
-	MsgVersion          int64     `json:"msg_version"`
-	Incident            *Incident `json:"incident,omitempty"`
-	ProcessDefinitionId string    `json:"process_definition_id,omitempty"`
-	ProcessInstanceId   string    `json:"process_instance_id,omitempty"`
+	Command             string      `json:"command"`
+	MsgVersion          int64       `json:"msg_version"`
+	Incident            *Incident   `json:"incident,omitempty"`
+	Handler             *OnIncident `json:"handler,omitempty"`
+	ProcessDefinitionId string      `json:"process_definition_id,omitempty"`
+	ProcessInstanceId   string      `json:"process_instance_id,omitempty"`
 }
 
 type Incident struct {
@@ -37,4 +38,10 @@ type Incident struct {
 	Time                time.Time `json:"time" bson:"time"`
 	TenantId            string    `json:"tenant_id" bson:"tenant_id"`
 	DeploymentName      string    `json:"deployment_name" bson:"deployment_name"`
+}
+
+type OnIncident struct {
+	ProcessDefinitionId string `json:"process_definition_id" bson:"process_definition_id"`
+	Restart             bool   `json:"restart" bson:"restart"`
+	Notify              bool   `json:"notify" bson:"notify"`
 }

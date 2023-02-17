@@ -19,6 +19,7 @@ package controller
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"github.com/SENERGY-Platform/process-incident-worker/lib/configuration"
 	"github.com/SENERGY-Platform/process-incident-worker/lib/interfaces"
 	"github.com/SENERGY-Platform/process-incident-worker/lib/messages"
@@ -86,11 +87,20 @@ func (this *Controller) HandleIncidentMessage(msg []byte) error {
 				return this.DeleteIncidentByProcessInstanceId(command.ProcessInstanceId)
 			}
 		}
+		if command.Command == "HANDLER" && command.Handler != nil {
+			return this.SetOnIncidentHandler(*command.Handler)
+		}
 	}
 	return nil
 }
 
 func (this *Controller) CreateIncident(incident messages.Incident) (err error) {
+	handling, registeredHandling, err := this.db.GetOnIncident(incident.ProcessDefinitionId)
+	if err != nil {
+		log.Println("ERROR: ", err)
+		debug.PrintStack()
+		return err
+	}
 	name, err := this.camunda.GetProcessName(incident.ProcessDefinitionId, incident.TenantId)
 	if err != nil {
 		log.Println("WARNING: unable to get process name", err)
@@ -99,23 +109,46 @@ func (this *Controller) CreateIncident(incident messages.Incident) (err error) {
 		incident.DeploymentName = name
 	}
 	if incident.TenantId != "" {
-		_ = notification.Send(this.config.NotificationUrl, notification.Message{
-			UserId:  incident.TenantId,
-			Title:   "Process-Incident in " + incident.DeploymentName,
-			Message: incident.ErrorMessage,
-		})
+		if !registeredHandling || handling.Notify {
+			_ = notification.Send(this.config.NotificationUrl, notification.Message{
+				UserId:  incident.TenantId,
+				Title:   "Process-Incident in " + incident.DeploymentName,
+				Message: incident.ErrorMessage,
+			})
+		}
 	}
 	err = this.camunda.StopProcessInstance(incident.ProcessInstanceId, incident.TenantId)
 	if err != nil {
 		return err
 	}
-	return this.db.Save(incident)
+	err = this.db.SaveIncident(incident)
+	if err != nil {
+		return err
+	}
+	if registeredHandling && handling.Restart {
+		err = this.camunda.StartProcess(incident.ProcessDefinitionId, incident.TenantId)
+		if err != nil {
+			log.Printf("ERROR: unable to restart process %v \n %#v \n", err, incident)
+			if incident.TenantId != "" {
+				_ = notification.Send(this.config.NotificationUrl, notification.Message{
+					UserId:  incident.TenantId,
+					Title:   "ERROR: unable to restart process after incident in: " + incident.DeploymentName,
+					Message: fmt.Sprintf("Restart-Error: %v \n\n Incident: %v \n", err, incident.ErrorMessage),
+				})
+			}
+		}
+	}
+	return nil
 }
 
 func (this *Controller) DeleteIncidentByProcessInstanceId(id string) error {
-	return this.db.DeleteByInstanceId(id)
+	return this.db.DeleteIncidentByInstanceId(id)
 }
 
 func (this *Controller) DeleteIncidentByProcessDefinitionId(id string) error {
 	return this.db.DeleteByDefinitionId(id)
+}
+
+func (this *Controller) SetOnIncidentHandler(handler messages.OnIncident) error {
+	return this.db.SaveOnIncident(handler)
 }

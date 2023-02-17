@@ -19,27 +19,25 @@ package mongo
 import (
 	"context"
 	"github.com/SENERGY-Platform/process-incident-worker/lib/configuration"
-	"github.com/SENERGY-Platform/process-incident-worker/lib/messages"
 	"github.com/pkg/errors"
-	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
-	"go.mongodb.org/mongo-driver/mongo/readpref"
 	"log"
 	"time"
 )
 
-const TIMEOUT = 2 * time.Second
+const TIMEOUT = 10 * time.Second
 
 type Mongo struct {
 	config configuration.Config
 	client *mongo.Client
+	ctx    context.Context
 }
 
 func New(ctx context.Context, config configuration.Config) (result *Mongo, err error) {
-	result = &Mongo{config: config}
-	ctx, cancel := context.WithCancel(ctx)
-	result.client, err = mongo.Connect(ctx, options.Client().ApplyURI(config.MongoUrl))
+	result = &Mongo{config: config, ctx: ctx}
+	timeout, _ := context.WithTimeout(ctx, TIMEOUT)
+	result.client, err = mongo.Connect(timeout, options.Client().ApplyURI(config.MongoUrl))
 	if err != nil {
 		err = errors.WithStack(err)
 		return nil, err
@@ -50,34 +48,28 @@ func New(ctx context.Context, config configuration.Config) (result *Mongo, err e
 		disconnectCtx, _ := context.WithTimeout(context.Background(), TIMEOUT)
 		result.client.Disconnect(disconnectCtx)
 	}()
-	pingCtx, _ := context.WithTimeout(context.Background(), TIMEOUT)
-	err = result.client.Ping(pingCtx, readpref.Primary())
+	return result, result.initIndexes()
+}
+
+func (this *Mongo) getTimeoutContext() (context.Context, context.CancelFunc) {
+	return context.WithTimeout(this.ctx, TIMEOUT)
+}
+
+func (this *Mongo) initIndexes() error {
+	// incident indexes are created by github.com/SENERGY-Platform/process-incident-api
+
+	// on-incident indexes
+	err := this.ensureIndex(this.onIncidentsCollection(), "on_incident_process_definition_id_index", OnIncidentBson.ProcessDefinitionId, true, false)
 	if err != nil {
-		cancel()
-		err = errors.WithStack(err)
-		return nil, err
+		return err
 	}
-	return result, nil
-}
-
-func (this *Mongo) Save(incident messages.Incident) error {
-	ctx, _ := context.WithTimeout(context.Background(), TIMEOUT)
-	_, err := this.collection().ReplaceOne(ctx, bson.M{"id": incident.Id}, incident, options.Replace().SetUpsert(true))
-	return errors.WithStack(err)
-}
-
-func (this *Mongo) DeleteByInstanceId(id string) error {
-	ctx, _ := context.WithTimeout(context.Background(), TIMEOUT)
-	_, err := this.collection().DeleteMany(ctx, bson.M{"process_instance_id": id})
-	return errors.WithStack(err)
+	return nil
 }
 
 func (this *Mongo) DeleteByDefinitionId(id string) error {
-	ctx, _ := context.WithTimeout(context.Background(), TIMEOUT)
-	_, err := this.collection().DeleteMany(ctx, bson.M{"process_definition_id": id})
-	return errors.WithStack(err)
-}
-
-func (this *Mongo) collection() *mongo.Collection {
-	return this.client.Database(this.config.MongoDatabaseName).Collection(this.config.MongoIncidentCollectionName)
+	err := this.DeleteIncidentByDefinitionId(id)
+	if err != nil {
+		return err
+	}
+	return this.DeleteOnIncidentByDefinitionId(id)
 }

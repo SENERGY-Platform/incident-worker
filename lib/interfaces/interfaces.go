@@ -29,6 +29,7 @@ type Controller interface {
 type Camunda interface {
 	StopProcessInstance(id string, tenantId string) (err error)
 	GetProcessName(id string, tenantId string) (string, error)
+	StartProcess(processDefinitionId string, userId string) (err error)
 }
 
 type CamundaFactory interface {
@@ -36,9 +37,11 @@ type CamundaFactory interface {
 }
 
 type Database interface {
-	Save(incident messages.Incident) error
-	DeleteByInstanceId(id string) error
 	DeleteByDefinitionId(id string) error
+	SaveIncident(incident messages.Incident) error
+	DeleteIncidentByInstanceId(id string) error
+	SaveOnIncident(handler messages.OnIncident) error
+	GetOnIncident(definitionId string) (incident messages.OnIncident, exists bool, err error)
 }
 
 type DatabaseFactory interface {
