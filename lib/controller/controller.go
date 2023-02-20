@@ -110,11 +110,15 @@ func (this *Controller) CreateIncident(incident messages.Incident) (err error) {
 	}
 	if incident.TenantId != "" {
 		if !registeredHandling || handling.Notify {
-			_ = notification.Send(this.config.NotificationUrl, notification.Message{
+			msg := notification.Message{
 				UserId:  incident.TenantId,
 				Title:   "Process-Incident in " + incident.DeploymentName,
 				Message: incident.ErrorMessage,
-			})
+			}
+			if registeredHandling && handling.Restart {
+				msg.Message = msg.Message + "\n\nprocess will be restarted"
+			}
+			_ = notification.Send(this.config.NotificationUrl, msg)
 		}
 	}
 	err = this.camunda.StopProcessInstance(incident.ProcessInstanceId, incident.TenantId)
