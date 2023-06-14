@@ -21,6 +21,8 @@ import (
 	"github.com/wvanbergen/kazoo-go"
 	"io/ioutil"
 	"log"
+	"net"
+	"strconv"
 	"strings"
 )
 
@@ -53,8 +55,20 @@ func InitTopicWithConfig(kafkaUrl string, configMap map[string][]kafka.ConfigEnt
 		return err
 	}
 	defer initConn.Close()
+
+	controller, err := initConn.Controller()
+	if err != nil {
+		return err
+	}
+	var controllerConn *kafka.Conn
+	controllerConn, err = kafka.Dial("tcp", net.JoinHostPort(controller.Host, strconv.Itoa(controller.Port)))
+	if err != nil {
+		return err
+	}
+	defer controllerConn.Close()
+
 	for _, topic := range topics {
-		err = initConn.CreateTopics(kafka.TopicConfig{
+		err = controllerConn.CreateTopics(kafka.TopicConfig{
 			Topic:             topic,
 			NumPartitions:     numPartitions,
 			ReplicationFactor: replicationFactor,
