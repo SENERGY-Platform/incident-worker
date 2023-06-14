@@ -32,10 +32,15 @@ type Controller struct {
 	config  configuration.Config
 	camunda interfaces.Camunda
 	db      interfaces.Database
+	metrics Metric
 }
 
-func New(ctx context.Context, config configuration.Config, camunda interfaces.Camunda, db interfaces.Database) *Controller {
-	return &Controller{config: config, camunda: camunda, db: db}
+type Metric interface {
+	NotifyIncidentMessage()
+}
+
+func New(ctx context.Context, config configuration.Config, camunda interfaces.Camunda, db interfaces.Database, m Metric) *Controller {
+	return &Controller{config: config, camunda: camunda, db: db, metrics: m}
 }
 
 type MsgVersionWrapper struct {
@@ -95,6 +100,7 @@ func (this *Controller) HandleIncidentMessage(msg []byte) error {
 }
 
 func (this *Controller) CreateIncident(incident messages.Incident) (err error) {
+	this.metrics.NotifyIncidentMessage()
 	handling, registeredHandling, err := this.db.GetOnIncident(incident.ProcessDefinitionId)
 	if err != nil {
 		log.Println("ERROR: ", err)

@@ -19,7 +19,6 @@ package mongo
 import (
 	"context"
 	"github.com/SENERGY-Platform/process-incident-worker/lib/messages"
-	"github.com/pkg/errors"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
@@ -30,13 +29,13 @@ var OnIncidentBson = getBsonFieldObject[messages.OnIncident]()
 func (this *Mongo) SaveOnIncident(handler messages.OnIncident) error {
 	ctx, _ := context.WithTimeout(context.Background(), TIMEOUT)
 	_, err := this.onIncidentsCollection().ReplaceOne(ctx, bson.M{OnIncidentBson.ProcessDefinitionId: handler.ProcessDefinitionId}, handler, options.Replace().SetUpsert(true))
-	return errors.WithStack(err)
+	return err
 }
 
 func (this *Mongo) DeleteOnIncidentByDefinitionId(definitionId string) error {
 	ctx, _ := context.WithTimeout(context.Background(), TIMEOUT)
 	_, err := this.onIncidentsCollection().DeleteMany(ctx, bson.M{OnIncidentBson.ProcessDefinitionId: definitionId})
-	return errors.WithStack(err)
+	return err
 }
 
 func (this *Mongo) onIncidentsCollection() *mongo.Collection {

@@ -23,6 +23,7 @@ import (
 	"github.com/SENERGY-Platform/process-incident-worker/lib/camunda/cache"
 	"github.com/SENERGY-Platform/process-incident-worker/lib/camunda/shards"
 	"github.com/SENERGY-Platform/process-incident-worker/lib/configuration"
+	"io"
 	"io/ioutil"
 	"log"
 	"net/http"
@@ -103,7 +104,7 @@ func startProcess(t *testing.T, config configuration.Config, processDefinitionId
 	}
 	defer resp.Body.Close()
 	if resp.StatusCode != 200 {
-		b, _ := ioutil.ReadAll(resp.Body)
+		b, _ := io.ReadAll(resp.Body)
 		t.Fatal(string(b))
 		return ""
 	}

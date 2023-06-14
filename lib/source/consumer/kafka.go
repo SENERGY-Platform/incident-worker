@@ -22,21 +22,21 @@ import (
 	"github.com/SENERGY-Platform/process-incident-worker/lib/source/util"
 	"github.com/segmentio/kafka-go"
 	"io"
-	"io/ioutil"
 	"log"
+	"os"
 	"sync"
 	"time"
 )
 
-func RunConsumer(ctx context.Context, zk string, groupid string, topic string, debug bool, topicConfigMap map[string][]kafka.ConfigEntry, listener func(topic string, msg []byte) error, errorhandler func(err error)) (err error) {
-	consumer := &Consumer{groupId: groupid, zkUrl: zk, topic: topic, listener: listener, errorhandler: errorhandler, ctx: ctx, debug: debug, topicConfigMap: topicConfigMap}
+func RunConsumer(ctx context.Context, kafkaUrl string, groupid string, topic string, debug bool, topicConfigMap map[string][]kafka.ConfigEntry, listener func(topic string, msg []byte) error, errorhandler func(err error)) (err error) {
+	consumer := &Consumer{groupId: groupid, kafkaUrl: kafkaUrl, topic: topic, listener: listener, errorhandler: errorhandler, ctx: ctx, debug: debug, topicConfigMap: topicConfigMap}
 	err = consumer.start()
 	return
 }
 
 type Consumer struct {
 	count          int
-	zkUrl          string
+	kafkaUrl       string
 	groupId        string
 	topic          string
 	ctx            context.Context
@@ -52,22 +52,20 @@ func (this *Consumer) start() error {
 	if this.debug {
 		log.Println("DEBUG: consume topic: \"" + this.topic + "\"")
 	}
-	broker, err := util.GetBroker(this.zkUrl)
-	if err != nil {
-		return err
-	}
-	err = util.InitTopic(this.zkUrl, this.topicConfigMap, this.topic)
+	err := util.InitTopic(this.kafkaUrl, this.topicConfigMap, this.topic)
 	if err != nil {
 		return err
 	}
 	r := kafka.NewReader(kafka.ReaderConfig{
-		CommitInterval: 0, //synchronous commits
-		Brokers:        broker,
-		GroupID:        this.groupId,
-		Topic:          this.topic,
-		MaxWait:        1 * time.Second,
-		Logger:         log.New(ioutil.Discard, "", 0),
-		ErrorLogger:    log.New(ioutil.Discard, "", 0),
+		CommitInterval:         0, //synchronous commits
+		Brokers:                []string{this.kafkaUrl},
+		GroupID:                this.groupId,
+		Topic:                  this.topic,
+		MaxWait:                1 * time.Second,
+		Logger:                 log.New(io.Discard, "", 0),
+		ErrorLogger:            log.New(os.Stderr, "[KAFKA-ERROR] ", log.LstdFlags),
+		WatchPartitionChanges:  true,
+		PartitionWatchInterval: time.Minute,
 	})
 	go func() {
 		defer r.Close()

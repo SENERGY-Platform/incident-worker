@@ -19,7 +19,6 @@ package configuration
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/pkg/errors"
 	"github.com/segmentio/kafka-go"
 	"os"
 	"reflect"
@@ -29,8 +28,9 @@ import (
 )
 
 type Config struct {
+	MetricsPort                   string                         `json:"metrics_port"`
 	ShardsDb                      string                         `json:"shards_db"`
-	ZookeeperUrl                  string                         `json:"zookeeper_url"`
+	KafkaUrl                      string                         `json:"kafka_url"`
 	KafkaConsumerGroup            string                         `json:"kafka_consumer_group"`
 	KafkaIncidentTopic            string                         `json:"kafka_incident_topic"`
 	Debug                         bool                           `json:"debug"`
@@ -46,11 +46,11 @@ type Config struct {
 func LoadConfig(location string) (config Config, err error) {
 	file, err := os.Open(location)
 	if err != nil {
-		return config, errors.WithStack(err)
+		return config, err
 	}
 	err = json.NewDecoder(file).Decode(&config)
 	if err != nil {
-		return config, errors.WithStack(err)
+		return config, err
 	}
 	handleEnvironmentVars(&config)
 	return config, nil

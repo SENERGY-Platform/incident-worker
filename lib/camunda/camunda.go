@@ -20,11 +20,11 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"errors"
 	"github.com/SENERGY-Platform/process-incident-worker/lib/camunda/cache"
 	"github.com/SENERGY-Platform/process-incident-worker/lib/camunda/shards"
 	"github.com/SENERGY-Platform/process-incident-worker/lib/configuration"
 	"github.com/SENERGY-Platform/process-incident-worker/lib/interfaces"
-	"github.com/pkg/errors"
 	"io"
 	"log"
 	"net/http"
@@ -58,11 +58,11 @@ func (this *Camunda) StopProcessInstance(id string, tenantId string) (err error)
 	client := &http.Client{Timeout: 5 * time.Second}
 	request, err := http.NewRequest("DELETE", shard+"/engine-rest/process-instance/"+url.PathEscape(id)+"?skipIoMappings=true", nil)
 	if err != nil {
-		return errors.WithStack(err)
+		return err
 	}
 	resp, err := client.Do(request)
 	if err != nil {
-		return errors.WithStack(err)
+		return err
 	}
 	defer resp.Body.Close()
 	if resp.StatusCode == http.StatusNotFound {
@@ -83,16 +83,16 @@ type NameWrapper struct {
 func (this *Camunda) GetProcessName(id string, tenantId string) (name string, err error) {
 	shard, err := this.shards.GetShardForUser(tenantId)
 	if err != nil {
-		return "", errors.WithStack(err)
+		return "", err
 	}
 	client := &http.Client{Timeout: 5 * time.Second}
 	request, err := http.NewRequest("GET", shard+"/engine-rest/process-definition/"+url.PathEscape(id), nil)
 	if err != nil {
-		return "", errors.WithStack(err)
+		return "", err
 	}
 	resp, err := client.Do(request)
 	if err != nil {
-		return "", errors.WithStack(err)
+		return "", err
 	}
 	defer resp.Body.Close()
 	if resp.StatusCode != 200 {
@@ -103,7 +103,7 @@ func (this *Camunda) GetProcessName(id string, tenantId string) (name string, er
 	}
 	result := NameWrapper{}
 	err = json.NewDecoder(resp.Body).Decode(&result)
-	return result.Name, errors.WithStack(err)
+	return result.Name, err
 }
 
 func (this *Camunda) StartProcess(processDefinitionId string, userId string) (err error) {

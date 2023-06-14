@@ -22,17 +22,17 @@ import (
 	"github.com/SENERGY-Platform/process-incident-worker/lib/camunda/shards"
 	"github.com/SENERGY-Platform/process-incident-worker/lib/configuration"
 	"github.com/SENERGY-Platform/process-incident-worker/tests/docker"
-	"github.com/ory/dockertest/v3"
 	"log"
 	"runtime/debug"
+	"sync"
 )
 
-func New(parentCtx context.Context, init configuration.Config) (config configuration.Config, err error) {
+func New(parentCtx context.Context, wg *sync.WaitGroup, init configuration.Config) (config configuration.Config, err error) {
 	config = init
 
 	ctx, cancel := context.WithCancel(parentCtx)
 
-	pool, err := dockertest.NewPool("")
+	_, zk, err := docker.Zookeeper(ctx, wg)
 	if err != nil {
 		log.Println("ERROR:", err)
 		debug.PrintStack()
@@ -40,16 +40,7 @@ func New(parentCtx context.Context, init configuration.Config) (config configura
 		return config, err
 	}
 
-	_, zk, err := docker.Zookeeper(pool, ctx)
-	if err != nil {
-		log.Println("ERROR:", err)
-		debug.PrintStack()
-		cancel()
-		return config, err
-	}
-	config.ZookeeperUrl = zk + ":2181"
-
-	err = docker.Kafka(pool, ctx, config.ZookeeperUrl)
+	config.KafkaUrl, err = docker.Kafka(ctx, wg, zk+":2181")
 	if err != nil {
 		log.Println("ERROR:", err)
 		debug.PrintStack()
@@ -57,7 +48,7 @@ func New(parentCtx context.Context, init configuration.Config) (config configura
 		return config, err
 	}
 
-	_, pgIp, _, err := docker.Postgres(pool, ctx, nil, "camunda")
+	_, pgIp, _, err := docker.PostgresWithNetwork(ctx, wg, "camunda")
 	if err != nil {
 		log.Println("ERROR:", err)
 		debug.PrintStack()
@@ -65,7 +56,7 @@ func New(parentCtx context.Context, init configuration.Config) (config configura
 		return config, err
 	}
 
-	_, camundaIp, err := docker.Camunda(pool, ctx, pgIp, "5432")
+	camundaUrl, err := docker.Camunda(ctx, wg, pgIp, "5432")
 	if err != nil {
 		log.Println("ERROR:", err)
 		debug.PrintStack()
@@ -73,7 +64,7 @@ func New(parentCtx context.Context, init configuration.Config) (config configura
 		return config, err
 	}
 
-	_, _, shardsDb, err := docker.Postgres(pool, ctx, nil, "shards")
+	shardsDb, err := docker.Postgres(ctx, wg, "shards")
 	if err != nil {
 		log.Println("ERROR:", err)
 		debug.PrintStack()
@@ -90,7 +81,7 @@ func New(parentCtx context.Context, init configuration.Config) (config configura
 		return config, err
 	}
 
-	err = s.EnsureShard("http://" + camundaIp + ":8080")
+	err = s.EnsureShard(camundaUrl)
 	if err != nil {
 		log.Println("ERROR:", err)
 		debug.PrintStack()
@@ -106,7 +97,7 @@ func New(parentCtx context.Context, init configuration.Config) (config configura
 		return config, err
 	}
 
-	_, ip, err := docker.Mongo(pool, ctx)
+	_, ip, err := docker.MongoDB(ctx, wg)
 	if err != nil {
 		log.Println("ERROR:", err)
 		debug.PrintStack()

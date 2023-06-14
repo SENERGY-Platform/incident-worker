@@ -20,7 +20,6 @@ import (
 	"context"
 	"github.com/SENERGY-Platform/process-incident-worker/lib/configuration"
 	"github.com/SENERGY-Platform/process-incident-worker/lib/messages"
-	"github.com/pkg/errors"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
@@ -34,21 +33,18 @@ func checkIncidentInDatabase(t *testing.T, config configuration.Config, expected
 	ctx, _ := context.WithTimeout(context.Background(), 2*time.Second)
 	client, err := mongo.Connect(ctx, options.Client().ApplyURI(config.MongoUrl))
 	if err != nil {
-		err = errors.WithStack(err)
 		t.Fatalf("ERROR: %+v", err)
 		return
 	}
 	result := client.Database(config.MongoDatabaseName).Collection(config.MongoIncidentCollectionName).FindOne(ctx, bson.M{"id": expected.Id})
 	err = result.Err()
 	if err != nil {
-		err = errors.WithStack(err)
 		t.Fatalf("ERROR: %+v", err)
 		return
 	}
 	compare := messages.Incident{}
 	err = result.Decode(&compare)
 	if err != nil {
-		err = errors.WithStack(err)
 		t.Fatalf("ERROR: %+v", err)
 		return
 	}
@@ -67,7 +63,6 @@ func checkIncidentsInDatabase(t *testing.T, config configuration.Config, expecte
 	ctx, _ := context.WithTimeout(context.Background(), 2*time.Second)
 	client, err := mongo.Connect(ctx, options.Client().ApplyURI(config.MongoUrl))
 	if err != nil {
-		err = errors.WithStack(err)
 		t.Fatalf("ERROR: %+v", err)
 		return
 	}
@@ -79,7 +74,6 @@ func checkIncidentsInDatabase(t *testing.T, config configuration.Config, expecte
 	incidents := []messages.Incident{}
 	cursor, err := client.Database(config.MongoDatabaseName).Collection(config.MongoIncidentCollectionName).Find(ctx, bson.M{}, option)
 	if err != nil {
-		err = errors.WithStack(err)
 		t.Fatalf("ERROR: %+v", err)
 		return
 	}
@@ -87,7 +81,6 @@ func checkIncidentsInDatabase(t *testing.T, config configuration.Config, expecte
 		incident := messages.Incident{}
 		err = cursor.Decode(&incident)
 		if err != nil {
-			err = errors.WithStack(err)
 			t.Fatalf("ERROR: %+v", err)
 			return
 		}
@@ -96,7 +89,6 @@ func checkIncidentsInDatabase(t *testing.T, config configuration.Config, expecte
 	}
 	err = cursor.Err()
 	if err != nil {
-		err = errors.WithStack(err)
 		t.Fatalf("ERROR: %+v", err)
 		return
 	}
@@ -109,7 +101,6 @@ func checkOnIncidentsInDatabase(t *testing.T, config configuration.Config, expec
 	ctx, _ := context.WithTimeout(context.Background(), 2*time.Second)
 	client, err := mongo.Connect(ctx, options.Client().ApplyURI(config.MongoUrl))
 	if err != nil {
-		err = errors.WithStack(err)
 		t.Fatalf("ERROR: %+v", err)
 		return
 	}
@@ -117,7 +108,6 @@ func checkOnIncidentsInDatabase(t *testing.T, config configuration.Config, expec
 	result := []messages.OnIncident{}
 	cursor, err := client.Database(config.MongoDatabaseName).Collection(config.MongoOnIncidentCollectionName).Find(ctx, bson.M{}, nil)
 	if err != nil {
-		err = errors.WithStack(err)
 		t.Fatalf("ERROR: %+v", err)
 		return
 	}
@@ -125,7 +115,6 @@ func checkOnIncidentsInDatabase(t *testing.T, config configuration.Config, expec
 		element := messages.OnIncident{}
 		err = cursor.Decode(&element)
 		if err != nil {
-			err = errors.WithStack(err)
 			t.Fatalf("ERROR: %+v", err)
 			return
 		}
@@ -133,7 +122,6 @@ func checkOnIncidentsInDatabase(t *testing.T, config configuration.Config, expec
 	}
 	err = cursor.Err()
 	if err != nil {
-		err = errors.WithStack(err)
 		t.Fatalf("ERROR: %+v", err)
 		return
 	}

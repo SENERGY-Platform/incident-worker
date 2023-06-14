@@ -19,7 +19,6 @@ package mongo
 import (
 	"context"
 	"github.com/SENERGY-Platform/process-incident-worker/lib/configuration"
-	"github.com/pkg/errors"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
 	"log"
@@ -39,7 +38,7 @@ func New(ctx context.Context, config configuration.Config) (result *Mongo, err e
 	timeout, _ := context.WithTimeout(ctx, TIMEOUT)
 	result.client, err = mongo.Connect(timeout, options.Client().ApplyURI(config.MongoUrl))
 	if err != nil {
-		err = errors.WithStack(err)
+		err = err
 		return nil, err
 	}
 	go func() {

@@ -25,11 +25,17 @@ import (
 	"github.com/SENERGY-Platform/process-incident-worker/lib/messages"
 	"github.com/SENERGY-Platform/process-incident-worker/lib/source"
 	"github.com/SENERGY-Platform/process-incident-worker/tests/server"
+	"sync"
 	"testing"
 	"time"
 )
 
 func TestDatabaseDeprecated(t *testing.T) {
+	wg := &sync.WaitGroup{}
+	defer wg.Wait()
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
 	defaultConfig, err := configuration.LoadConfig("../config.json")
 	if err != nil {
 		t.Error(err)
@@ -37,11 +43,7 @@ func TestDatabaseDeprecated(t *testing.T) {
 	}
 	defaultConfig.Debug = true
 
-	ctx, cancel := context.WithCancel(context.Background())
-	defer time.Sleep(10 * time.Second) //wait for docker cleanup
-	defer cancel()
-
-	config, err := server.New(ctx, defaultConfig)
+	config, err := server.New(ctx, wg, defaultConfig)
 	if err != nil {
 		t.Error(err)
 		return
@@ -79,6 +81,11 @@ func TestDatabaseDeprecated(t *testing.T) {
 }
 
 func TestDatabase(t *testing.T) {
+	wg := &sync.WaitGroup{}
+	defer wg.Wait()
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
 	defaultConfig, err := configuration.LoadConfig("../config.json")
 	if err != nil {
 		t.Error(err)
@@ -86,11 +93,7 @@ func TestDatabase(t *testing.T) {
 	}
 	defaultConfig.Debug = true
 
-	ctx, cancel := context.WithCancel(context.Background())
-	defer time.Sleep(10 * time.Second) //wait for docker cleanup
-	defer cancel()
-
-	config, err := server.New(ctx, defaultConfig)
+	config, err := server.New(ctx, wg, defaultConfig)
 	if err != nil {
 		t.Error(err)
 		return
@@ -128,6 +131,11 @@ func TestDatabase(t *testing.T) {
 }
 
 func TestCamunda(t *testing.T) {
+	wg := &sync.WaitGroup{}
+	defer wg.Wait()
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
 	defaultConfig, err := configuration.LoadConfig("../config.json")
 	if err != nil {
 		t.Error(err)
@@ -135,11 +143,7 @@ func TestCamunda(t *testing.T) {
 	}
 	defaultConfig.Debug = true
 
-	ctx, cancel := context.WithCancel(context.Background())
-	defer time.Sleep(10 * time.Second) //wait for docker cleanup
-	defer cancel()
-
-	config, err := server.New(ctx, defaultConfig)
+	config, err := server.New(ctx, wg, defaultConfig)
 	if err != nil {
 		t.Error(err)
 		return
@@ -197,6 +201,11 @@ func TestCamunda(t *testing.T) {
 }
 
 func TestCamundaDeprecated(t *testing.T) {
+	wg := &sync.WaitGroup{}
+	defer wg.Wait()
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
 	defaultConfig, err := configuration.LoadConfig("../config.json")
 	if err != nil {
 		t.Error(err)
@@ -204,11 +213,7 @@ func TestCamundaDeprecated(t *testing.T) {
 	}
 	defaultConfig.Debug = true
 
-	ctx, cancel := context.WithCancel(context.Background())
-	defer time.Sleep(10 * time.Second) //wait for docker cleanup
-	defer cancel()
-
-	config, err := server.New(ctx, defaultConfig)
+	config, err := server.New(ctx, wg, defaultConfig)
 	if err != nil {
 		t.Error(err)
 		return
@@ -266,6 +271,11 @@ func TestCamundaDeprecated(t *testing.T) {
 }
 
 func TestDeleteByDeploymentIdDeprecated(t *testing.T) {
+	wg := &sync.WaitGroup{}
+	defer wg.Wait()
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
 	defaultConfig, err := configuration.LoadConfig("../config.json")
 	if err != nil {
 		t.Error(err)
@@ -273,11 +283,7 @@ func TestDeleteByDeploymentIdDeprecated(t *testing.T) {
 	}
 	defaultConfig.Debug = true
 
-	ctx, cancel := context.WithCancel(context.Background())
-	defer time.Sleep(10 * time.Second) //wait for docker cleanup
-	defer cancel()
-
-	config, err := server.New(ctx, defaultConfig)
+	config, err := server.New(ctx, wg, defaultConfig)
 	if err != nil {
 		t.Error(err)
 		return
@@ -357,6 +363,11 @@ func TestDeleteByDeploymentIdDeprecated(t *testing.T) {
 }
 
 func TestDeleteByDeploymentId(t *testing.T) {
+	wg := &sync.WaitGroup{}
+	defer wg.Wait()
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
 	defaultConfig, err := configuration.LoadConfig("../config.json")
 	if err != nil {
 		t.Error(err)
@@ -364,11 +375,7 @@ func TestDeleteByDeploymentId(t *testing.T) {
 	}
 	defaultConfig.Debug = true
 
-	ctx, cancel := context.WithCancel(context.Background())
-	defer time.Sleep(10 * time.Second) //wait for docker cleanup
-	defer cancel()
-
-	config, err := server.New(ctx, defaultConfig)
+	config, err := server.New(ctx, wg, defaultConfig)
 	if err != nil {
 		t.Error(err)
 		return
@@ -461,6 +468,11 @@ func TestDeleteByDeploymentId(t *testing.T) {
 }
 
 func TestDeleteByInstanceIdDeprecated(t *testing.T) {
+	wg := &sync.WaitGroup{}
+	defer wg.Wait()
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
 	defaultConfig, err := configuration.LoadConfig("../config.json")
 	if err != nil {
 		t.Error(err)
@@ -468,11 +480,7 @@ func TestDeleteByInstanceIdDeprecated(t *testing.T) {
 	}
 	defaultConfig.Debug = true
 
-	ctx, cancel := context.WithCancel(context.Background())
-	defer time.Sleep(10 * time.Second) //wait for docker cleanup
-	defer cancel()
-
-	config, err := server.New(ctx, defaultConfig)
+	config, err := server.New(ctx, wg, defaultConfig)
 	if err != nil {
 		t.Error(err)
 		return
@@ -552,6 +560,11 @@ func TestDeleteByInstanceIdDeprecated(t *testing.T) {
 }
 
 func TestDeleteByInstanceId(t *testing.T) {
+	wg := &sync.WaitGroup{}
+	defer wg.Wait()
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
 	defaultConfig, err := configuration.LoadConfig("../config.json")
 	if err != nil {
 		t.Error(err)
@@ -559,11 +572,7 @@ func TestDeleteByInstanceId(t *testing.T) {
 	}
 	defaultConfig.Debug = true
 
-	ctx, cancel := context.WithCancel(context.Background())
-	defer time.Sleep(10 * time.Second) //wait for docker cleanup
-	defer cancel()
-
-	config, err := server.New(ctx, defaultConfig)
+	config, err := server.New(ctx, wg, defaultConfig)
 	if err != nil {
 		t.Error(err)
 		return

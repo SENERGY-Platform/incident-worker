@@ -1,7 +1,8 @@
 {
+    "metrics_port": "8080",
     "notification_url": "",
     "shards_db":"postgres://usr:pw@databasip:5432/shards?sslmode=disable",
-    "zookeeper_url":"zk",
+    "kafka_url":"",
     "kafka_consumer_group":"incident-worker",
     "kafka_incident_topic":"camunda_incident",
     "debug":true,

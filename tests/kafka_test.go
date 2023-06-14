@@ -21,8 +21,6 @@ import (
 	"encoding/json"
 	"github.com/SENERGY-Platform/process-incident-worker/lib/configuration"
 	"github.com/SENERGY-Platform/process-incident-worker/lib/messages"
-	"github.com/SENERGY-Platform/process-incident-worker/lib/source/util"
-	"github.com/pkg/errors"
 	"github.com/segmentio/kafka-go"
 	"log"
 	"os"
@@ -74,25 +72,14 @@ func sendIncidentHandler(t *testing.T, config configuration.Config, definitionId
 }
 
 func sendToKafka(t *testing.T, config configuration.Config, key string, topic string, msg interface{}) {
-	broker, err := util.GetBroker(config.ZookeeperUrl)
-	if err != nil {
-		err = errors.WithStack(err)
-		t.Fatalf("ERROR: %+v", err)
-		return
-	}
-	if len(broker) == 0 {
-		t.Fatalf("ERROR: %+v", errors.New("missing kafka broker"))
-		return
-	}
-	writer := kafka.NewWriter(kafka.WriterConfig{
-		Brokers:     broker,
+	writer := kafka.Writer{
+		Addr:        kafka.TCP(config.KafkaUrl),
 		Topic:       topic,
 		MaxAttempts: 10,
 		Logger:      log.New(os.Stdout, "[KAFKA-PRODUCER] ", 0),
-	})
+	}
 	message, err := json.Marshal(msg)
 	if err != nil {
-		err = errors.WithStack(err)
 		t.Fatalf("ERROR: %+v", err)
 		return
 	}
@@ -105,14 +92,14 @@ func sendToKafka(t *testing.T, config configuration.Config, key string, topic st
 	})
 
 	if err != nil {
-		err = errors.WithStack(err)
+
 		t.Fatalf("ERROR: %+v", err)
 		return
 	}
 
 	err = writer.Close()
 	if err != nil {
-		err = errors.WithStack(err)
+
 		t.Fatalf("ERROR: %+v", err)
 		return
 	}

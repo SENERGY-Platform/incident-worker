@@ -18,41 +18,67 @@ package docker
 
 import (
 	"context"
-	"database/sql"
 	"errors"
 	"fmt"
-	_ "github.com/lib/pq"
-	"github.com/ory/dockertest/v3"
+	"github.com/testcontainers/testcontainers-go"
+	"github.com/testcontainers/testcontainers-go/wait"
 	"log"
 	"net/http"
 	"sync"
+	"time"
 )
 
-func Camunda(pool *dockertest.Pool, ctx context.Context, pgIp string, pgPort string) (hostPort string, ipAddress string, err error) {
-	log.Println("start connectionlog")
-	camunda, err := pool.Run("ghcr.io/senergy-platform/process-engine", "dev", []string{
-		"DB_PASSWORD=pw",
-		"DB_URL=jdbc:postgresql://" + pgIp + ":" + pgPort + "/camunda",
-		"DB_PORT=" + pgPort,
-		"DB_NAME=camunda",
-		"DB_HOST=" + pgIp,
-		"DB_DRIVER=org.postgresql.Driver",
-		"DB_USERNAME=usr",
-		"DATABASE=postgres",
+func Camunda(ctx context.Context, wg *sync.WaitGroup, pgIp string, pgPort string) (camundaUrl string, err error) {
+	log.Println("start camunda")
+	dbName := "camunda"
+	c, err := testcontainers.GenericContainer(ctx, testcontainers.GenericContainerRequest{
+		ContainerRequest: testcontainers.ContainerRequest{
+			Image:        "ghcr.io/senergy-platform/process-engine:dev",
+			ExposedPorts: []string{"8080/tcp"},
+			WaitingFor: wait.ForAll(
+				wait.ForListeningPort("8080/tcp"),
+				wait.ForLog("Server initialization in"),
+				wait.ForLog("Server startup in"),
+			),
+			Env: map[string]string{
+				"DB_PASSWORD": "pw",
+				"DB_URL":      "jdbc:postgresql://" + pgIp + ":" + pgPort + "/" + dbName,
+				"DB_PORT":     pgPort,
+				"DB_NAME":     dbName,
+				"DB_HOST":     pgIp,
+				"DB_DRIVER":   "org.postgresql.Driver",
+				"DB_USERNAME": "usr",
+				"DATABASE":    "postgres",
+			},
+		},
+		Started: true,
 	})
 	if err != nil {
-		return "", "", err
+		return "", err
 	}
-	hostPort = camunda.GetPort("8080/tcp")
+
+	err = Dockerlog(c, "CAMUNDA")
+	if err != nil {
+		return "", err
+	}
+
+	wg.Add(1)
 	go func() {
+		defer wg.Done()
 		<-ctx.Done()
-		camunda.Close()
+		log.Println("DEBUG: remove container camunda", c.Terminate(context.Background()))
 	}()
-	//go Dockerlog(pool, ctx, camunda, "CAMUNDA")
-	hostPort = camunda.GetPort("8080/tcp")
-	err = pool.Retry(func() error {
+
+	containerip, err := c.ContainerIP(ctx)
+	if err != nil {
+		return "", err
+	}
+
+	camundaUrl = fmt.Sprintf("http://%s:%s", containerip, "8080")
+
+	err = Retry(time.Minute, func() error {
 		log.Println("try camunda connection...")
-		resp, err := http.Get("http://localhost:" + hostPort + "/engine-rest/metrics")
+		resp, err := http.Get(camundaUrl + "/engine-rest/metrics")
 		if err != nil {
 			return err
 		}
@@ -62,39 +88,6 @@ func Camunda(pool *dockertest.Pool, ctx context.Context, pgIp string, pgPort str
 		}
 		return nil
 	})
-	return hostPort, camunda.Container.NetworkSettings.IPAddress, err
-}
 
-func Postgres(pool *dockertest.Pool, ctx context.Context, wg *sync.WaitGroup, dbName string) (hostPort string, ipAddress string, pgStr string, err error) {
-	log.Println("start postgres")
-	container, err := pool.Run("postgres", "latest", []string{
-		"POSTGRES_DB=" + dbName, "POSTGRES_PASSWORD=pw", "POSTGRES_USER=usr",
-	})
-	if err != nil {
-		return "", "", "", err
-	}
-	hostPort = container.GetPort("5432/tcp")
-	if wg != nil {
-		wg.Add(1)
-	}
-	go func() {
-		<-ctx.Done()
-		container.Close()
-		if wg != nil {
-			wg.Done()
-		}
-	}()
-	//go Dockerlog(pool, ctx, container, "POSTGRES")
-	pgStr = fmt.Sprintf("postgres://usr:pw@localhost:%s/%s?sslmode=disable", hostPort, dbName)
-	err = pool.Retry(func() error {
-		log.Println("try pg connection...")
-		var err error
-		db, err := sql.Open("postgres", pgStr)
-		if err != nil {
-			return err
-		}
-		defer db.Close()
-		return db.Ping()
-	})
-	return hostPort, container.Container.NetworkSettings.IPAddress, pgStr, err
+	return camundaUrl, err
 }

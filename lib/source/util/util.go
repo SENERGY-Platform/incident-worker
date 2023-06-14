@@ -17,7 +17,6 @@
 package util
 
 import (
-	"github.com/pkg/errors"
 	"github.com/segmentio/kafka-go"
 	"github.com/wvanbergen/kazoo-go"
 	"io/ioutil"
@@ -35,53 +34,23 @@ func getBroker(zkUrl string) (brokers []string, err error) {
 	zk, chroot := kazoo.ParseConnectionString(zkUrl)
 	zookeeper.Chroot = chroot
 	if kz, err := kazoo.NewKazoo(zk, zookeeper); err != nil {
-		err = errors.WithStack(err)
+
 		return brokers, err
 	} else {
 		brokers, err = kz.BrokerList()
-		err = errors.WithStack(err)
+
 		return brokers, err
 	}
-}
-
-func GetKafkaController(zkUrl string) (controller string, err error) {
-	zookeeper := kazoo.NewConfig()
-	zookeeper.Logger = log.New(ioutil.Discard, "", 0)
-	zk, chroot := kazoo.ParseConnectionString(zkUrl)
-	zookeeper.Chroot = chroot
-	kz, err := kazoo.NewKazoo(zk, zookeeper)
-	if err != nil {
-		err = errors.WithStack(err)
-		return controller, err
-	}
-	controllerId, err := kz.Controller()
-	if err != nil {
-		err = errors.WithStack(err)
-		return controller, err
-	}
-	brokers, err := kz.Brokers()
-	if err != nil {
-		err = errors.WithStack(err)
-		return controller, err
-	}
-	return brokers[controllerId], err
 }
 
 func InitTopic(zkUrl string, configMap map[string][]kafka.ConfigEntry, topics ...string) (err error) {
 	return InitTopicWithConfig(zkUrl, configMap, 1, 1, topics...)
 }
 
-func InitTopicWithConfig(zkUrl string, configMap map[string][]kafka.ConfigEntry, numPartitions int, replicationFactor int, topics ...string) (err error) {
-	controller, err := GetKafkaController(zkUrl)
+func InitTopicWithConfig(kafkaUrl string, configMap map[string][]kafka.ConfigEntry, numPartitions int, replicationFactor int, topics ...string) (err error) {
+	initConn, err := kafka.Dial("tcp", kafkaUrl)
 	if err != nil {
 		return err
-	}
-	if controller == "" {
-		return errors.New("unable to find controller")
-	}
-	initConn, err := kafka.Dial("tcp", controller)
-	if err != nil {
-		return errors.WithStack(err)
 	}
 	defer initConn.Close()
 	for _, topic := range topics {
@@ -92,7 +61,7 @@ func InitTopicWithConfig(zkUrl string, configMap map[string][]kafka.ConfigEntry,
 			ConfigEntries:     GetTopicConfig(configMap, topic),
 		})
 		if err != nil {
-			return errors.WithStack(err)
+			return err
 		}
 	}
 	return nil

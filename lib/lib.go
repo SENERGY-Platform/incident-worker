@@ -23,6 +23,7 @@ import (
 	"github.com/SENERGY-Platform/process-incident-worker/lib/controller"
 	"github.com/SENERGY-Platform/process-incident-worker/lib/database"
 	"github.com/SENERGY-Platform/process-incident-worker/lib/interfaces"
+	"github.com/SENERGY-Platform/process-incident-worker/lib/metrics"
 	"github.com/SENERGY-Platform/process-incident-worker/lib/source"
 	"log"
 )
@@ -45,7 +46,8 @@ func StartWith(parentCtx context.Context, config configuration.Config, source in
 		cancel()
 		return err
 	}
-	ctrl := controller.New(ctx, config, camundaInstance, databaseInstance)
+	m := metrics.New().Serve(ctx, config.MetricsPort)
+	ctrl := controller.New(ctx, config, camundaInstance, databaseInstance, m)
 	err = source.Start(ctx, config, ctrl, errorHandler)
 	if err != nil {
 		cancel()
