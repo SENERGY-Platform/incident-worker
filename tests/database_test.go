@@ -23,7 +23,6 @@ import (
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
-	"go.mongodb.org/mongo-driver/x/bsonx"
 	"reflect"
 	"testing"
 	"time"
@@ -67,8 +66,8 @@ func checkIncidentsInDatabase(t *testing.T, config configuration.Config, expecte
 		return
 	}
 	option := options.Find().
-		SetSort(bsonx.Doc{
-			{"id", bsonx.Int32(1)},
+		SetSort(bson.D{
+			{"id", 1},
 		})
 
 	incidents := []messages.Incident{}

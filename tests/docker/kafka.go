@@ -55,7 +55,7 @@ func Kafka(ctx context.Context, wg *sync.WaitGroup, zookeeperUrl string) (kafkaU
 				wait.ForLog("INFO Awaiting socket connections on"),
 				wait.ForListeningPort("9092/tcp"),
 			),
-			ExposedPorts:    []string{"9092/tcp"},
+			ExposedPorts:    []string{strconv.Itoa(kafkaport) + ":9092"},
 			AlwaysPullImage: true,
 			Env: map[string]string{
 				"ALLOW_PLAINTEXT_LISTENER":             "yes",
@@ -82,10 +82,7 @@ func Kafka(ctx context.Context, wg *sync.WaitGroup, zookeeperUrl string) (kafkaU
 	if err != nil {
 		return kafkaUrl, err
 	}
-	err = Forward(ctx, kafkaport, hostIp+":"+containerPort.Port())
-	if err != nil {
-		return kafkaUrl, err
-	}
+	log.Println("KAFKA_TEST: container-port", containerPort, kafkaport)
 
 	err = Retry(1*time.Minute, func() error {
 		return tryKafkaConn(kafkaUrl)
@@ -169,11 +166,6 @@ func Zookeeper(ctx context.Context, wg *sync.WaitGroup) (hostPort string, ipAddr
 		<-ctx.Done()
 		log.Println("DEBUG: remove container zookeeper", c.Terminate(context.Background()))
 	}()
-
-	//err = Dockerlog(ctx, c, "ZOOKEEPER")
-	if err != nil {
-		return "", "", err
-	}
 
 	ipAddress, err = c.ContainerIP(ctx)
 	if err != nil {
