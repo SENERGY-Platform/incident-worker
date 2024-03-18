@@ -40,6 +40,7 @@ type Config struct {
 	MongoOnIncidentCollectionName string                         `json:"mongo_on_incident_collection_name"`
 	TopicConfigMap                map[string][]kafka.ConfigEntry `json:"topic_config_map"`
 	NotificationUrl               string                         `json:"notification_url"`
+	DeveloperNotificationUrl      string                         `json:"developer_notification_url"`
 }
 
 // loads config from json in location and used environment variables (e.g ZookeeperUrl --> ZOOKEEPER_URL)

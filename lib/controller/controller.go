@@ -20,27 +20,40 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	developerNotifications "github.com/SENERGY-Platform/developer-notifications/pkg/client"
 	"github.com/SENERGY-Platform/process-incident-worker/lib/configuration"
 	"github.com/SENERGY-Platform/process-incident-worker/lib/interfaces"
 	"github.com/SENERGY-Platform/process-incident-worker/lib/messages"
 	"github.com/SENERGY-Platform/process-incident-worker/lib/notification"
 	"log"
+	"log/slog"
+	"os"
 	"runtime/debug"
 )
 
 type Controller struct {
-	config  configuration.Config
-	camunda interfaces.Camunda
-	db      interfaces.Database
-	metrics Metric
+	config           configuration.Config
+	camunda          interfaces.Camunda
+	db               interfaces.Database
+	metrics          Metric
+	devNotifications developerNotifications.Client
+	logger           *slog.Logger
 }
 
 type Metric interface {
 	NotifyIncidentMessage()
 }
 
-func New(ctx context.Context, config configuration.Config, camunda interfaces.Camunda, db interfaces.Database, m Metric) *Controller {
-	return &Controller{config: config, camunda: camunda, db: db, metrics: m}
+func New(ctx context.Context, config configuration.Config, camunda interfaces.Camunda, db interfaces.Database, m Metric) (ctrl *Controller) {
+	logger := slog.New(slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelInfo}))
+	if info, ok := debug.ReadBuildInfo(); ok {
+		logger = logger.With("go-module", info.Path)
+	}
+	ctrl = &Controller{config: config, camunda: camunda, db: db, metrics: m, logger: logger}
+	if config.DeveloperNotificationUrl != "" && config.DeveloperNotificationUrl != "-" {
+		ctrl.devNotifications = developerNotifications.New(config.DeveloperNotificationUrl)
+	}
+	return ctrl
 }
 
 type MsgVersionWrapper struct {
@@ -56,44 +69,61 @@ func getMsgVersion(msg []byte) (version int64, err error) {
 func (this *Controller) HandleIncidentMessage(msg []byte) error {
 	version, err := getMsgVersion(msg)
 	if err != nil {
-		log.Println("ERROR: unable to parse msg -> ignore: ", string(msg))
-		debug.PrintStack()
+		this.logger.Error("unable to parse msg -> ignore", "snrgy-log-type", "error", "error", err.Error(), "msg", string(msg))
 		return nil
 	}
 	if version == 1 || version == 2 {
 		incident := messages.Incident{}
 		err = json.Unmarshal(msg, &incident)
 		if err != nil {
-			log.Println("ERROR: unable to parse msg -> ignore: ", string(msg))
-			debug.PrintStack()
+			this.logger.Error("unable to parse msg -> ignore", "snrgy-log-type", "error", "error", err.Error(), "msg", string(msg))
 			return nil
 		}
-		return this.CreateIncident(incident)
+		err = this.CreateIncident(incident)
+		if err != nil {
+			this.logger.Error("unable to hande incident create", "snrgy-log-type", "error", "error", err.Error(), "user", incident.TenantId, "process-definition-id", incident.ProcessDefinitionId, "incident-msg", incident.ErrorMessage)
+		}
+		return err
 	}
 	if version == 3 {
 		command := messages.KafkaIncidentsCommand{}
 		err = json.Unmarshal(msg, &command)
 		if err != nil {
-			log.Println("ERROR: unable to parse msg -> ignore: ", string(msg))
-			debug.PrintStack()
+			this.logger.Error("unable to parse msg -> ignore", "snrgy-log-type", "error", "error", err.Error(), "msg", string(msg))
 			return nil
 		}
 		if command.Command == "PUT" || command.Command == "POST" {
 			if command.Incident != nil {
 				command.Incident.MsgVersion = command.MsgVersion
-				return this.CreateIncident(*command.Incident)
+				err = this.CreateIncident(*command.Incident)
+				if err != nil {
+					this.logger.Error("unable to hande incident PUT/POST", "snrgy-log-type", "error", "error", err.Error(), "user", command.Incident.TenantId, "process-definition-id", command.Incident.ProcessDefinitionId, "incident-msg", command.Incident.ErrorMessage)
+				}
+				return err
 			}
 		}
 		if command.Command == "DELETE" {
 			if command.ProcessDefinitionId != "" {
-				return this.DeleteIncidentByProcessDefinitionId(command.ProcessDefinitionId)
+				err = this.DeleteIncidentByProcessDefinitionId(command.ProcessDefinitionId)
+				if err != nil {
+					this.logger.Error("unable to hande incident DELETE", "snrgy-log-type", "error", "error", err.Error(), "process-definition-id", command.ProcessDefinitionId)
+				}
+				return err
 			}
 			if command.ProcessInstanceId != "" {
-				return this.DeleteIncidentByProcessInstanceId(command.ProcessInstanceId)
+				err = this.DeleteIncidentByProcessInstanceId(command.ProcessInstanceId)
+				if err != nil {
+					this.logger.Error("unable to hande incident DELETE", "snrgy-log-type", "error", "error", err.Error(), "process-instance-id", command.ProcessInstanceId)
+				}
+				return err
 			}
 		}
 		if command.Command == "HANDLER" && command.Handler != nil {
-			return this.SetOnIncidentHandler(*command.Handler)
+			err = this.SetOnIncidentHandler(*command.Handler)
+			if err != nil {
+				this.logger.Error("unable to hande incident HANDLER", "snrgy-log-type", "error", "error", err.Error(), "process-definition-id", command.Handler.ProcessDefinitionId)
+			}
+			return err
 		}
 	}
 	return nil
@@ -109,11 +139,12 @@ func (this *Controller) CreateIncident(incident messages.Incident) (err error) {
 	}
 	name, err := this.camunda.GetProcessName(incident.ProcessDefinitionId, incident.TenantId)
 	if err != nil {
-		log.Println("WARNING: unable to get process name", err)
+		this.logger.Error("unable to get process name", "snrgy-log-type", "warning", "error", err.Error())
 		incident.DeploymentName = incident.ProcessDefinitionId
 	} else {
 		incident.DeploymentName = name
 	}
+	this.logger.Info("process-incident", "snrgy-log-type", "process-incident", "error", incident.ErrorMessage, "user", incident.TenantId, "deployment-name", incident.DeploymentName, "process-definition-id", incident.ProcessDefinitionId)
 	if incident.TenantId != "" {
 		if !registeredHandling || handling.Notify {
 			msg := notification.Message{
@@ -124,7 +155,7 @@ func (this *Controller) CreateIncident(incident messages.Incident) (err error) {
 			if registeredHandling && handling.Restart {
 				msg.Message = msg.Message + "\n\nprocess will be restarted"
 			}
-			_ = notification.Send(this.config.NotificationUrl, msg)
+			this.Notify(msg)
 		}
 	}
 	err = this.camunda.StopProcessInstance(incident.ProcessInstanceId, incident.TenantId)
@@ -138,9 +169,9 @@ func (this *Controller) CreateIncident(incident messages.Incident) (err error) {
 	if registeredHandling && handling.Restart {
 		err = this.camunda.StartProcess(incident.ProcessDefinitionId, incident.TenantId)
 		if err != nil {
-			log.Printf("ERROR: unable to restart process %v \n %#v \n", err, incident)
+			this.logger.Error("unable to restart process", "snrgy-log-type", "process-incident", "error", err.Error(), "user", incident.TenantId, "deployment-name", incident.DeploymentName, "process-definition-id", incident.ProcessDefinitionId)
 			if incident.TenantId != "" {
-				_ = notification.Send(this.config.NotificationUrl, notification.Message{
+				this.Notify(notification.Message{
 					UserId:  incident.TenantId,
 					Title:   "ERROR: unable to restart process after incident in: " + incident.DeploymentName,
 					Message: fmt.Sprintf("Restart-Error: %v \n\n Incident: %v \n", err, incident.ErrorMessage),
@@ -161,4 +192,24 @@ func (this *Controller) DeleteIncidentByProcessDefinitionId(id string) error {
 
 func (this *Controller) SetOnIncidentHandler(handler messages.OnIncident) error {
 	return this.db.SaveOnIncident(handler)
+}
+
+func (this *Controller) Notify(msg notification.Message) {
+	_ = notification.Send(this.config.NotificationUrl, msg)
+	if this.devNotifications != nil {
+		go func() {
+			if this.config.Debug {
+				log.Println("DEBUG: send developer-notification")
+			}
+			err := this.devNotifications.SendMessage(developerNotifications.Message{
+				Sender: "github.com/SENERGY-Platform/process-incident-worker",
+				Title:  "Process-Incident-User-Notification",
+				Tags:   []string{"process-incident", "user-notification", msg.UserId},
+				Body:   fmt.Sprintf("Notification For %v\nTitle: %v\nMessage: %v\n", msg.UserId, msg.Title, msg.Message),
+			})
+			if err != nil {
+				log.Println("ERROR: unable to send developer-notification", err)
+			}
+		}()
+	}
 }

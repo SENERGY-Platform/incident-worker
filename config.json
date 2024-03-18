@@ -1,6 +1,7 @@
 {
     "metrics_port": "8080",
     "notification_url": "",
+    "developer_notification_url": "http://api.developer-notifications:8080",
     "shards_db":"postgres://usr:pw@databasip:5432/shards?sslmode=disable",
     "kafka_url":"",
     "kafka_consumer_group":"incident-worker",

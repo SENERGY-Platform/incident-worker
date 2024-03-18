@@ -37,7 +37,7 @@ func Send(notificationUrl string, message Message) error {
 	if err != nil {
 		return err
 	}
-	req, err := http.NewRequest("POST", notificationUrl+"/notifications", b)
+	req, err := http.NewRequest("POST", notificationUrl+"/notifications?ignore_duplicates_within_seconds=3600", b)
 	if err != nil {
 		log.Println("ERROR: unable to send notification", err)
 		return err
