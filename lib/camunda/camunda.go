@@ -21,10 +21,12 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"github.com/SENERGY-Platform/process-incident-worker/lib/camunda/cache"
 	"github.com/SENERGY-Platform/process-incident-worker/lib/camunda/shards"
 	"github.com/SENERGY-Platform/process-incident-worker/lib/configuration"
 	"github.com/SENERGY-Platform/process-incident-worker/lib/interfaces"
+	"github.com/SENERGY-Platform/process-incident-worker/lib/messages"
 	"io"
 	"log"
 	"net/http"
@@ -183,4 +185,38 @@ func createStartMessage(parameter map[string]interface{}) map[string]interface{}
 		}
 	}
 	return map[string]interface{}{"variables": variables}
+}
+
+func (this *Camunda) GetIncidents() (result []messages.CamundaIncident, err error) {
+	shards, err := this.shards.GetShards()
+	if err != nil {
+		return result, err
+	}
+	for _, shard := range shards {
+		temp, err := this.GetShardIncidents(shard)
+		if err != nil {
+			return result, err
+		}
+		result = append(result, temp...)
+	}
+	return result, nil
+}
+
+func (this *Camunda) GetShardIncidents(shard string) (result []messages.CamundaIncident, err error) {
+	client := http.Client{Timeout: 5 * time.Second}
+	resp, err := client.Get(shard + "/engine-rest/incident")
+	if err != nil {
+		return result, err
+	}
+	defer resp.Body.Close()
+	if resp.StatusCode >= 300 {
+		pl, _ := io.ReadAll(resp.Body)
+		err = fmt.Errorf("unable to load incidents: %v", string(pl))
+		return result, err
+	}
+	err = json.NewDecoder(resp.Body).Decode(&result)
+	if err != nil {
+		return result, err
+	}
+	return result, nil
 }

@@ -30,6 +30,7 @@ type Camunda interface {
 	StopProcessInstance(id string, tenantId string) (err error)
 	GetProcessName(id string, tenantId string) (string, error)
 	StartProcess(processDefinitionId string, userId string) (err error)
+	GetIncidents() (result []messages.CamundaIncident, err error)
 }
 
 type CamundaFactory interface {

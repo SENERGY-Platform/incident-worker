@@ -24,7 +24,6 @@ import (
 	"github.com/SENERGY-Platform/process-incident-worker/lib/camunda/shards"
 	"github.com/SENERGY-Platform/process-incident-worker/lib/configuration"
 	"io"
-	"io/ioutil"
 	"log"
 	"net/http"
 	"net/url"
@@ -118,6 +117,10 @@ func startProcess(t *testing.T, config configuration.Config, processDefinitionId
 }
 
 func deployProcessRequest(config configuration.Config, name string) (id string, err error) {
+	return deployProcessWithInfo(config, name, xml, "<svg/>", "")
+}
+
+func deployProcessWithInfo(config configuration.Config, name string, xml string, svg string, owner string) (id string, err error) {
 	s, err := shards.New(config.ShardsDb, cache.None)
 	if err != nil {
 		return id, err
@@ -129,7 +132,7 @@ func deployProcessRequest(config configuration.Config, name string) (id string, 
 	}
 	result := map[string]interface{}{}
 	boundary := "---------------------------" + time.Now().String()
-	b := strings.NewReader(buildPayLoad(name, strings.ReplaceAll(xml, "__name__", name), "<svg/>", boundary, "test"))
+	b := strings.NewReader(buildPayLoad(name, strings.ReplaceAll(xml, "__name__", name), svg, boundary, owner))
 	resp, err := http.Post(shard+"/engine-rest/deployment/create", "multipart/form-data; boundary="+boundary, b)
 	if err != nil {
 		log.Println("ERROR: request to processengine ", err)
@@ -137,7 +140,7 @@ func deployProcessRequest(config configuration.Config, name string) (id string, 
 	}
 	defer resp.Body.Close()
 	if resp.StatusCode != 200 {
-		b, _ := ioutil.ReadAll(resp.Body)
+		b, _ := io.ReadAll(resp.Body)
 		return "", errors.New(string(b))
 	}
 	err = json.NewDecoder(resp.Body).Decode(&result)

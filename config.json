@@ -11,6 +11,7 @@
     "mongo_database_name":"incidents",
     "mongo_incident_collection_name":"incidents",
     "mongo_on_incident_collection_name": "on_incident",
+    "camunda_incident_request_interval": "5s",
     "topic_config_map": {
         "camunda_incident": [
             {

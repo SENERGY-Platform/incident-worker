@@ -31,7 +31,7 @@ import (
 )
 
 func Kafka(ctx context.Context, wg *sync.WaitGroup, zookeeperUrl string) (kafkaUrl string, err error) {
-	kafkaport, err := getFreePort()
+	kafkaport, err := GetFreePort()
 	if err != nil {
 		return kafkaUrl, err
 	}

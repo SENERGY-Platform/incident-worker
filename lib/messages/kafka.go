@@ -45,3 +45,19 @@ type OnIncident struct {
 	Restart             bool   `json:"restart" bson:"restart"`
 	Notify              bool   `json:"notify" bson:"notify"`
 }
+
+type CamundaIncident struct {
+	Id                  string `json:"id"`
+	ProcessDefinitionId string `json:"processDefinitionId"`
+	ProcessInstanceId   string `json:"processInstanceId"`
+	ExecutionId         string `json:"executionId"`
+	IncidentTimestamp   string `json:"incidentTimestamp"`
+	IncidentType        string `json:"incidentType"`
+	ActivityId          string `json:"activityId"`
+	CauseIncidentId     string `json:"causeIncidentId"`
+	RootCauseIncidentId string `json:"rootCauseIncidentId"`
+	Configuration       string `json:"configuration"`
+	TenantId            string `json:"tenantId"`
+	IncidentMessage     string `json:"incidentMessage"`
+	JobDefinitionId     string `json:"jobDefinitionId"`
+}

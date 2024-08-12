@@ -19,6 +19,7 @@ package lib
 import (
 	"context"
 	"github.com/SENERGY-Platform/process-incident-worker/lib/camunda"
+	"github.com/SENERGY-Platform/process-incident-worker/lib/camundasource"
 	"github.com/SENERGY-Platform/process-incident-worker/lib/configuration"
 	"github.com/SENERGY-Platform/process-incident-worker/lib/controller"
 	"github.com/SENERGY-Platform/process-incident-worker/lib/database"
@@ -53,5 +54,11 @@ func StartWith(parentCtx context.Context, config configuration.Config, source in
 		cancel()
 		return err
 	}
+	err = camundasource.Start(ctx, config, camundaInstance, ctrl)
+	if err != nil {
+		cancel()
+		return err
+	}
+
 	return nil
 }

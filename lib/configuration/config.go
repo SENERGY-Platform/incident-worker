@@ -28,19 +28,20 @@ import (
 )
 
 type Config struct {
-	MetricsPort                   string                         `json:"metrics_port"`
-	ShardsDb                      string                         `json:"shards_db"`
-	KafkaUrl                      string                         `json:"kafka_url"`
-	KafkaConsumerGroup            string                         `json:"kafka_consumer_group"`
-	KafkaIncidentTopic            string                         `json:"kafka_incident_topic"`
-	Debug                         bool                           `json:"debug"`
-	MongoUrl                      string                         `json:"mongo_url"`
-	MongoDatabaseName             string                         `json:"mongo_database_name"`
-	MongoIncidentCollectionName   string                         `json:"mongo_incident_collection_name"`
-	MongoOnIncidentCollectionName string                         `json:"mongo_on_incident_collection_name"`
-	TopicConfigMap                map[string][]kafka.ConfigEntry `json:"topic_config_map"`
-	NotificationUrl               string                         `json:"notification_url"`
-	DeveloperNotificationUrl      string                         `json:"developer_notification_url"`
+	MetricsPort                    string                         `json:"metrics_port"`
+	ShardsDb                       string                         `json:"shards_db"`
+	KafkaUrl                       string                         `json:"kafka_url"`
+	KafkaConsumerGroup             string                         `json:"kafka_consumer_group"`
+	KafkaIncidentTopic             string                         `json:"kafka_incident_topic"`
+	Debug                          bool                           `json:"debug"`
+	MongoUrl                       string                         `json:"mongo_url"`
+	MongoDatabaseName              string                         `json:"mongo_database_name"`
+	MongoIncidentCollectionName    string                         `json:"mongo_incident_collection_name"`
+	MongoOnIncidentCollectionName  string                         `json:"mongo_on_incident_collection_name"`
+	TopicConfigMap                 map[string][]kafka.ConfigEntry `json:"topic_config_map"`
+	NotificationUrl                string                         `json:"notification_url"`
+	DeveloperNotificationUrl       string                         `json:"developer_notification_url"`
+	CamundaIncidentRequestInterval string                         `json:"camunda_incident_request_interval"`
 }
 
 // loads config from json in location and used environment variables (e.g ZookeeperUrl --> ZOOKEEPER_URL)

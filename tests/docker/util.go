@@ -24,6 +24,7 @@ import (
 	"io"
 	"log"
 	"net"
+	"strconv"
 	"time"
 )
 
@@ -55,7 +56,15 @@ func Retry(timeout time.Duration, f func() error) (err error) {
 	return err
 }
 
-func getFreePort() (int, error) {
+func GetFreePortStr() (string, error) {
+	port, err := GetFreePort()
+	if err != nil {
+		return "", err
+	}
+	return strconv.Itoa(port), err
+}
+
+func GetFreePort() (int, error) {
 	addr, err := net.ResolveTCPAddr("tcp", "localhost:0")
 	if err != nil {
 		return 0, err
