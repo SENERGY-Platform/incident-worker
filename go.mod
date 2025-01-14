@@ -19,6 +19,7 @@ require (
 	github.com/Microsoft/go-winio v0.6.1 // indirect
 	github.com/Microsoft/hcsshim v0.12.0 // indirect
 	github.com/SENERGY-Platform/developer-notifications v0.0.4 // indirect
+	github.com/SENERGY-Platform/service-commons v0.0.0-20240813072046-91b3195dd8fc // indirect
 	github.com/beorn7/perks v1.0.1 // indirect
 	github.com/cenkalti/backoff/v4 v4.2.1 // indirect
 	github.com/cespare/xxhash/v2 v2.2.0 // indirect

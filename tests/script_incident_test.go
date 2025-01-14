@@ -94,7 +94,11 @@ func TestScriptIncident(t *testing.T) {
 			t.Error(err)
 			return
 		}
-		ctrl := controller.New(ctx, config, camundaInstance, databaseInstance, metrics.New())
+		ctrl, err := controller.New(ctx, config, camundaInstance, databaseInstance, metrics.New())
+		if err != nil {
+			t.Error(err)
+			return
+		}
 
 		err = ctrl.SetOnIncidentHandler(messages.OnIncident{
 			ProcessDefinitionId: processId,

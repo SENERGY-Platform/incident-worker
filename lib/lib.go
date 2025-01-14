@@ -48,7 +48,11 @@ func StartWith(parentCtx context.Context, config configuration.Config, source in
 		return err
 	}
 	m := metrics.New().Serve(ctx, config.MetricsPort)
-	ctrl := controller.New(ctx, config, camundaInstance, databaseInstance, m)
+	ctrl, err := controller.New(ctx, config, camundaInstance, databaseInstance, m)
+	if err != nil {
+		cancel()
+		return err
+	}
 	err = source.Start(ctx, config, ctrl, errorHandler)
 	if err != nil {
 		cancel()

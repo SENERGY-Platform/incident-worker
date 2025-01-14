@@ -25,35 +25,42 @@ import (
 	"github.com/SENERGY-Platform/process-incident-worker/lib/interfaces"
 	"github.com/SENERGY-Platform/process-incident-worker/lib/messages"
 	"github.com/SENERGY-Platform/process-incident-worker/lib/notification"
+	"github.com/SENERGY-Platform/service-commons/pkg/cache"
 	"log"
 	"log/slog"
 	"os"
 	"runtime/debug"
+	"time"
 )
 
 type Controller struct {
-	config           configuration.Config
-	camunda          interfaces.Camunda
-	db               interfaces.Database
-	metrics          Metric
-	devNotifications developerNotifications.Client
-	logger           *slog.Logger
+	config                configuration.Config
+	camunda               interfaces.Camunda
+	db                    interfaces.Database
+	metrics               Metric
+	devNotifications      developerNotifications.Client
+	logger                *slog.Logger
+	handledIncidentsCache *cache.Cache
 }
 
 type Metric interface {
 	NotifyIncidentMessage()
 }
 
-func New(ctx context.Context, config configuration.Config, camunda interfaces.Camunda, db interfaces.Database, m Metric) (ctrl *Controller) {
+func New(ctx context.Context, config configuration.Config, camunda interfaces.Camunda, db interfaces.Database, m Metric) (ctrl *Controller, err error) {
 	logger := slog.New(slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelInfo}))
 	if info, ok := debug.ReadBuildInfo(); ok {
 		logger = logger.With("go-module", info.Path)
 	}
-	ctrl = &Controller{config: config, camunda: camunda, db: db, metrics: m, logger: logger}
+	c, err := cache.New(cache.Config{}) //if the worker is scaled, the l2 must be configured with a shared memcached
+	if err != nil {
+		return nil, err
+	}
+	ctrl = &Controller{config: config, camunda: camunda, db: db, metrics: m, logger: logger, handledIncidentsCache: c}
 	if config.DeveloperNotificationUrl != "" && config.DeveloperNotificationUrl != "-" {
 		ctrl.devNotifications = developerNotifications.New(config.DeveloperNotificationUrl)
 	}
-	return ctrl
+	return ctrl, nil
 }
 
 type MsgVersionWrapper struct {
@@ -130,6 +137,16 @@ func (this *Controller) HandleIncidentMessage(msg []byte) error {
 }
 
 func (this *Controller) CreateIncident(incident messages.Incident) (err error) {
+	//for every process instance an incident may only be handled once every 5 min
+	//use the cache.Use method to do incident handling, only if the process instance is not found in cache
+	//incident.ProcessInstanceId should be enough as key but existing tests would fail, so the incident.ProcessDefinitionId is added
+	_, err = cache.Use[string](this.handledIncidentsCache, incident.ProcessDefinitionId+"+"+incident.ProcessInstanceId, func() (string, error) {
+		return "", this.createIncident(incident)
+	}, cache.NoValidation, 5*time.Minute)
+	return err
+}
+
+func (this *Controller) createIncident(incident messages.Incident) (err error) {
 	this.metrics.NotifyIncidentMessage()
 	handling, registeredHandling, err := this.db.GetOnIncident(incident.ProcessDefinitionId)
 	if err != nil {
