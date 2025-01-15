@@ -172,6 +172,7 @@ func (this *Controller) createIncident(incident messages.Incident) (err error) {
 				UserId:  incident.TenantId,
 				Title:   "Process-Incident in " + incident.DeploymentName,
 				Message: incident.ErrorMessage,
+				Topic:   notification.Topic,
 			}
 			if registeredHandling && handling.Restart {
 				msg.Message = msg.Message + "\n\nprocess will be restarted"
@@ -196,6 +197,7 @@ func (this *Controller) createIncident(incident messages.Incident) (err error) {
 					UserId:  incident.TenantId,
 					Title:   "ERROR: unable to restart process after incident in: " + incident.DeploymentName,
 					Message: fmt.Sprintf("Restart-Error: %v \n\n Incident: %v \n", err, incident.ErrorMessage),
+					Topic:   notification.Topic,
 				})
 			}
 		}
