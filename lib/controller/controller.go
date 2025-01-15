@@ -30,6 +30,7 @@ import (
 	"log/slog"
 	"os"
 	"runtime/debug"
+	"sync"
 	"time"
 )
 
@@ -41,6 +42,7 @@ type Controller struct {
 	devNotifications      developerNotifications.Client
 	logger                *slog.Logger
 	handledIncidentsCache *cache.Cache
+	mux                   sync.Mutex
 }
 
 type Metric interface {
@@ -137,6 +139,8 @@ func (this *Controller) HandleIncidentMessage(msg []byte) error {
 }
 
 func (this *Controller) CreateIncident(incident messages.Incident) (err error) {
+	this.mux.Lock()
+	defer this.mux.Unlock()
 	//for every process instance an incident may only be handled once every 5 min
 	//use the cache.Use method to do incident handling, only if the process instance is not found in cache
 	//incident.ProcessInstanceId should be enough as key but existing tests would fail, so the incident.ProcessDefinitionId is added
@@ -161,7 +165,7 @@ func (this *Controller) createIncident(incident messages.Incident) (err error) {
 	} else {
 		incident.DeploymentName = name
 	}
-	this.logger.Info("process-incident", "snrgy-log-type", "process-incident", "error", incident.ErrorMessage, "user", incident.TenantId, "deployment-name", incident.DeploymentName, "process-definition-id", incident.ProcessDefinitionId)
+	this.logger.Info("process-incident", "snrgy-log-type", "process-incident", "error", incident.ErrorMessage, "user", incident.TenantId, "deployment-name", incident.DeploymentName, "process-definition-id", incident.ProcessDefinitionId, "process-instance-id", incident.ProcessInstanceId)
 	if incident.TenantId != "" {
 		if !registeredHandling || handling.Notify {
 			msg := notification.Message{
@@ -186,7 +190,7 @@ func (this *Controller) createIncident(incident messages.Incident) (err error) {
 	if registeredHandling && handling.Restart {
 		err = this.camunda.StartProcess(incident.ProcessDefinitionId, incident.TenantId)
 		if err != nil {
-			this.logger.Error("unable to restart process", "snrgy-log-type", "process-incident", "error", err.Error(), "user", incident.TenantId, "deployment-name", incident.DeploymentName, "process-definition-id", incident.ProcessDefinitionId)
+			this.logger.Error("unable to restart process", "snrgy-log-type", "process-incident", "error", err.Error(), "user", incident.TenantId, "deployment-name", incident.DeploymentName, "process-definition-id", incident.ProcessDefinitionId, "process-instance-id", incident.ProcessInstanceId)
 			if incident.TenantId != "" {
 				this.Notify(notification.Message{
 					UserId:  incident.TenantId,
