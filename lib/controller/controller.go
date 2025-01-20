@@ -30,7 +30,6 @@ import (
 	"log/slog"
 	"os"
 	"runtime/debug"
-	"sync"
 	"time"
 )
 
@@ -42,7 +41,7 @@ type Controller struct {
 	devNotifications      developerNotifications.Client
 	logger                *slog.Logger
 	handledIncidentsCache *cache.Cache
-	mux                   sync.Mutex
+	mux                   TopicMutex
 }
 
 type Metric interface {
@@ -139,12 +138,13 @@ func (this *Controller) HandleIncidentMessage(msg []byte) error {
 }
 
 func (this *Controller) CreateIncident(incident messages.Incident) (err error) {
-	this.mux.Lock()
-	defer this.mux.Unlock()
+	topic := incident.ProcessDefinitionId + "+" + incident.ProcessInstanceId
+	this.mux.Lock(topic)
+	defer this.mux.Unlock(topic)
 	//for every process instance an incident may only be handled once every 5 min
 	//use the cache.Use method to do incident handling, only if the process instance is not found in cache
 	//incident.ProcessInstanceId should be enough as key but existing tests would fail, so the incident.ProcessDefinitionId is added
-	_, err = cache.Use[string](this.handledIncidentsCache, incident.ProcessDefinitionId+"+"+incident.ProcessInstanceId, func() (string, error) {
+	_, err = cache.Use[string](this.handledIncidentsCache, topic, func() (string, error) {
 		return "", this.createIncident(incident)
 	}, cache.NoValidation, 5*time.Minute)
 	return err
